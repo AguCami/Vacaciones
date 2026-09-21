@@ -1,0 +1,117 @@
+@import 'tailwindcss';
+
+/*
+ * Paleta playa / Pixar: colores saturados y cálidos, nada de gris corporativo.
+ * La idea es que abrir la app se parezca más a un fotograma de película que a
+ * una planilla — porque la mitad de la app *es* una planilla y necesita ayuda.
+ */
+@theme {
+  --color-mar: #0ea5b7;
+  --color-mar-hondo: #076a7d;
+  --color-mar-claro: #5fd3de;
+  --color-espuma: #d9f7f7;
+  --color-arena: #f6e2b8;
+  --color-arena-oscura: #e0bf88;
+  --color-coral: #ff6b5a;
+  --color-coral-oscuro: #d94436;
+  --color-sol: #ffc23c;
+  --color-atardecer: #ff9a5c;
+  --color-palmera: #2fa36b;
+  --color-noche: #123246;
+  --color-tinta: #0d2b3a;
+
+  --font-sans: 'Nunito', 'Quicksand', ui-rounded, 'Segoe UI Rounded', system-ui, sans-serif;
+
+  /* Sombras en capas: una difusa que da volumen y una corta que apoya el
+     objeto sobre la página. Un solo box-shadow plano mata el efecto 3D. */
+  --shadow-flotante: 0 18px 40px -12px rgb(12 58 76 / 0.35), 0 4px 10px -4px rgb(12 58 76 / 0.28);
+  --shadow-pegado: 0 2px 0 0 rgb(12 58 76 / 0.12), 0 8px 18px -8px rgb(12 58 76 / 0.3);
+}
+
+:root {
+  --fondo: linear-gradient(180deg, #ffe9c7 0%, #ffd2a8 22%, #8fe3e8 55%, #3cbcd0 100%);
+  --panel: rgb(255 255 255 / 0.9);
+  --panel-borde: rgb(255 255 255 / 0.75);
+  --texto: var(--color-tinta);
+  --texto-suave: #4a6f80;
+  color-scheme: light;
+}
+
+/* De noche, en la ruta, un fondo blanco a pantalla completa encandila.
+   Misma escena, después del atardecer. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema='claro']) {
+    --fondo: linear-gradient(180deg, #16243f 0%, #1d3b5c 35%, #12506b 70%, #0b3547 100%);
+    --panel: rgb(20 48 66 / 0.82);
+    --panel-borde: rgb(120 200 215 / 0.22);
+    --texto: #eaf7fb;
+    --texto-suave: #9dc3d2;
+    color-scheme: dark;
+  }
+}
+
+:root[data-tema='oscuro'] {
+  --fondo: linear-gradient(180deg, #16243f 0%, #1d3b5c 35%, #12506b 70%, #0b3547 100%);
+  --panel: rgb(20 48 66 / 0.82);
+  --panel-borde: rgb(120 200 215 / 0.22);
+  --texto: #eaf7fb;
+  --texto-suave: #9dc3d2;
+  color-scheme: dark;
+}
+
+html,
+body,
+#raiz {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  background-attachment: fixed;
+  color: var(--texto);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Las tarjetas flotan sobre la escena en vez de estar pegadas al fondo: borde
+   claro arriba, sombra larga abajo. Es el truco que da la sensación de relieve. */
+.tarjeta {
+  background: var(--panel);
+  border: 1px solid var(--panel-borde);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-flotante);
+  backdrop-filter: blur(12px);
+}
+
+.boton {
+  border-radius: 999px;
+  font-weight: 800;
+  box-shadow: var(--shadow-pegado);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+
+.boton:active {
+  transform: translateY(2px) scale(0.98);
+  box-shadow: 0 1px 0 0 rgb(12 58 76 / 0.15);
+}
+
+@media (hover: hover) {
+  .boton:hover {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+  }
+}
+
+/* El respeto por quien marea con el movimiento: si pidió menos animación, se
+   apagan las olas, el auto y el resto. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
