@@ -77,7 +77,7 @@ export function Intro({ fechaSalida, alEntrar }: Props) {
           {/* Sin título a la vista: la playa habla sola. Queda para lectores de pantalla. */}
           <h1 className="sr-only">Vacaciones: Córdoba a Bombas y Bombinhas</h1>
           <button type="button" onClick={alEntrar} className="vidrio vidrio-boton px-8 py-3.5 text-lg font-black">
-            Entrar al viaje →
+            Entrar al viaje
           </button>
         </div>
       </div>
