@@ -12,13 +12,6 @@ import { useViaje, useYo } from './ganchos/useViaje'
 
 type Pestania = 'mapa' | 'gastos' | 'cuentas' | 'listas' | 'guia' | 'ajustes'
 
-/** Qué decir en el encabezado según dónde estén parados. */
-function estadoDelViaje(parada: (typeof PARADAS)[number]): string {
-  if (parada.tipo === 'destino') return '¡llegamos!'
-  if (parada.tipo === 'salida') return 'todavía sin salir'
-  return `vamos por ${parada.nombre}`
-}
-
 /** Días que faltan para salir, o null si ya salieron o no hay fecha. */
 function diasParaSalir(fechaSalida?: string): number | null {
   if (!fechaSalida) return null
@@ -99,12 +92,15 @@ export function App() {
         aria-hidden
       />
       <header className="relative mb-5 text-center">
-        <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
-          Vacaciones <span aria-hidden>🏖️</span>
+        <h1>
+          <img
+            src={`${import.meta.env.BASE_URL}titulo.webp`}
+            alt="Bombas y Bombinhas"
+            width={900}
+            height={193}
+            className="mx-auto h-auto w-full max-w-md drop-shadow-[0_2px_6px_rgb(0_0_0/0.18)]"
+          />
         </h1>
-        <p className="font-bold opacity-70">
-          Córdoba → Bombas y Bombinhas · {estadoDelViaje(parada)}
-        </p>
         {faltan !== null && (
           <p className="tarjeta mt-2 inline-block !rounded-full px-4 py-1 text-sm font-black">
             {faltan === 0 ? '¡Hoy salimos! 🚗' : faltan === 1 ? 'Mañana salimos 🚗' : `Faltan ${faltan} días 🚗`}
