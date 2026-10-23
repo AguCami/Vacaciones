@@ -74,10 +74,8 @@ export function Intro({ fechaSalida, alEntrar }: Props) {
         </div>
 
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="drop-shadow-[0_2px_12px_rgb(0_0_0/0.35)]">
-            <h1 className="text-5xl font-black tracking-tight">Vacaciones</h1>
-            <p className="mt-1 text-lg font-bold">Córdoba → Bombas y Bombinhas</p>
-          </div>
+          {/* Sin título a la vista: la playa habla sola. Queda para lectores de pantalla. */}
+          <h1 className="sr-only">Vacaciones: Córdoba a Bombas y Bombinhas</h1>
           <button type="button" onClick={alEntrar} className="vidrio vidrio-boton px-8 py-3.5 text-lg font-black">
             Entrar al viaje →
           </button>
