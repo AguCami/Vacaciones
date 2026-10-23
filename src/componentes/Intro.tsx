@@ -41,14 +41,6 @@ export function Intro({ fechaSalida, alEntrar }: Props) {
   const quieto = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
   const base = import.meta.env.BASE_URL
 
-  const salida = fechaSalida
-    ? new Date(`${fechaSalida}T12:00:00`).toLocaleDateString('es-AR', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-      })
-    : ''
-
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-[var(--color-noche)] text-white">
       <video
@@ -75,9 +67,6 @@ export function Intro({ fechaSalida, alEntrar }: Props) {
                 <Celda valor={falta.minutos} nombre="min" />
                 <Celda valor={falta.segundos} nombre="seg" />
               </div>
-              <p className="mt-3 text-sm font-bold opacity-90">
-                Salimos el {salida}, {HORA_SALIDA} 🚗
-              </p>
             </>
           ) : (
             <p className="py-2 text-xl font-black">{fechaSalida ? '¡Ya estamos en viaje! 🚗' : 'Cargá la fecha de salida en Ajustes'}</p>
