@@ -3,11 +3,13 @@ import { Ajustes } from './componentes/Ajustes'
 import { Balances } from './componentes/Balances'
 import { Bienvenida } from './componentes/Bienvenida'
 import { Cuentas } from './componentes/Cuentas'
+import { Guia } from './componentes/Guia'
+import { Listas } from './componentes/Listas'
 import { Mapa } from './componentes/Mapa'
 import { PARADAS } from './datos/recorrido'
 import { useViaje, useYo } from './ganchos/useViaje'
 
-type Pestania = 'mapa' | 'gastos' | 'cuentas' | 'ajustes'
+type Pestania = 'mapa' | 'gastos' | 'cuentas' | 'listas' | 'guia' | 'ajustes'
 
 /** Qué decir en el encabezado según dónde estén parados. */
 function estadoDelViaje(parada: (typeof PARADAS)[number]): string {
@@ -16,11 +18,24 @@ function estadoDelViaje(parada: (typeof PARADAS)[number]): string {
   return `vamos por ${parada.nombre}`
 }
 
+/** Días que faltan para salir, o null si ya salieron o no hay fecha. */
+function diasParaSalir(fechaSalida?: string): number | null {
+  if (!fechaSalida) return null
+  const salida = new Date(`${fechaSalida}T00:00:00`)
+  const hoy = new Date()
+  hoy.setHours(0, 0, 0, 0)
+  const dias = Math.round((salida.getTime() - hoy.getTime()) / 86_400_000)
+  return dias >= 0 ? dias : null
+}
+
+// Ajustes no está en la barra: se usa una vez y queda arriba, en el engranaje.
+// Cinco botones es lo que entra cómodo en un celular angosto.
 const PESTANIAS: { id: Pestania; nombre: string; emoji: string }[] = [
   { id: 'mapa', nombre: 'Mapa', emoji: '🗺️' },
   { id: 'gastos', nombre: 'Gastos', emoji: '🧾' },
   { id: 'cuentas', nombre: 'Cuentas', emoji: '⚖️' },
-  { id: 'ajustes', nombre: 'Ajustes', emoji: '⚙️' },
+  { id: 'listas', nombre: 'Listas', emoji: '✅' },
+  { id: 'guia', nombre: 'Guía', emoji: '🧭' },
 ]
 
 export function App() {
@@ -46,16 +61,33 @@ export function App() {
   const ajustes = viaje.ajustes
   const paradaActualId = ajustes.paradaActualId ?? PARADAS[0].id
   const parada = PARADAS.find((p) => p.id === paradaActualId) ?? PARADAS[0]
+  const faltan = parada.tipo === 'salida' ? diasParaSalir(ajustes.fechaSalida) : null
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 pb-28 pt-6">
-      <header className="mb-5 text-center">
+      <header className="relative mb-5 text-center">
         <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
           Vacaciones <span aria-hidden>🏖️</span>
         </h1>
         <p className="font-bold opacity-70">
           Córdoba → Bombas y Bombinhas · {estadoDelViaje(parada)}
         </p>
+        {faltan !== null && (
+          <p className="mt-2 inline-block rounded-full bg-[var(--color-sol)] px-4 py-1 text-sm font-black text-[var(--color-tinta)] shadow-[var(--shadow-pegado)]">
+            {faltan === 0 ? '¡Hoy salimos! 🚗' : faltan === 1 ? 'Mañana salimos 🚗' : `Faltan ${faltan} días 🚗`}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => setPestania('ajustes')}
+          aria-label="Ajustes"
+          aria-current={pestania === 'ajustes' ? 'page' : undefined}
+          className={`boton absolute right-0 top-0 grid size-11 place-items-center text-xl ${
+            pestania === 'ajustes' ? 'bg-[var(--color-mar)]' : 'bg-white/70'
+          }`}
+        >
+          ⚙️
+        </button>
       </header>
 
       <main className="flex-1">
@@ -84,6 +116,15 @@ export function App() {
             alRegistrarPago={(p) => void viaje.agregarPago(p)}
           />
         )}
+        {pestania === 'listas' && (
+          <Listas
+            personas={viaje.personas}
+            items={viaje.items}
+            yoId={yoId}
+            alGuardar={(i) => void viaje.guardarItem(i)}
+          />
+        )}
+        {pestania === 'guia' && <Guia ajustes={ajustes} />}
         {pestania === 'ajustes' && (
           <Ajustes
             personas={viaje.personas}

@@ -57,6 +57,32 @@ export function Ajustes({
       </div>
 
       <div className="tarjeta p-5">
+        <h3 className="text-lg font-black">Fechas del viaje</h3>
+        <p className="mt-1 text-sm font-bold opacity-65">Con la de salida, arriba aparece cuántos días faltan.</p>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-black uppercase tracking-wide opacity-60">Salida</span>
+            <input
+              type="date"
+              className={claseCampo}
+              value={ajustes.fechaSalida ?? ''}
+              onChange={(e) => alGuardarAjustes({ ...ajustes, fechaSalida: e.target.value || undefined })}
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-black uppercase tracking-wide opacity-60">Vuelta</span>
+            <input
+              type="date"
+              className={claseCampo}
+              value={ajustes.fechaVuelta ?? ''}
+              min={ajustes.fechaSalida}
+              onChange={(e) => alGuardarAjustes({ ...ajustes, fechaVuelta: e.target.value || undefined })}
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="tarjeta p-5">
         <h3 className="text-lg font-black">Quiénes viajan</h3>
         <ul className="mt-3 flex flex-col gap-2">
           {personas.map((p, i) => (
@@ -220,3 +246,6 @@ export function Ajustes({
     </section>
   )
 }
+
+const claseCampo =
+  'rounded-2xl border-2 border-white/70 bg-white/80 px-4 py-2.5 font-bold text-[var(--color-tinta)] outline-none focus:border-[var(--color-mar)]'

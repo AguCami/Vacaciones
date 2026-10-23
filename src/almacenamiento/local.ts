@@ -1,4 +1,4 @@
-import type { Ajustes, Gasto, Pago, Persona } from '../dominio/tipos'
+import type { Ajustes, Gasto, ItemLista, Pago, Persona } from '../dominio/tipos'
 import type { Almacenamiento } from './tipos'
 
 const CLAVE = 'vacaciones-brasil'
@@ -8,6 +8,7 @@ type Contenido = {
   personas: Persona[]
   gastos: Gasto[]
   pagos: Pago[]
+  items: ItemLista[]
   ajustes: Ajustes
 }
 
@@ -16,6 +17,7 @@ const INICIAL: Contenido = {
   personas: [],
   gastos: [],
   pagos: [],
+  items: [],
   ajustes: {
     monedaBase: 'ARS',
     cotizaciones: { ARS: 1, BRL: 1, USD: 1 },
@@ -125,6 +127,16 @@ export class AlmacenamientoLocal implements Almacenamiento {
     })
   }
 
+  leerItems(): Promise<ItemLista[]> {
+    return Promise.resolve(leer().items)
+  }
+
+  guardarItem(item: ItemLista): Promise<void> {
+    return this.mutar((c) => {
+      c.items = [...c.items.filter((i) => i.id !== item.id), item]
+    })
+  }
+
   leerAjustes(): Promise<Ajustes> {
     return Promise.resolve(leer().ajustes)
   }
@@ -152,6 +164,7 @@ export class AlmacenamientoLocal implements Almacenamiento {
       c.personas = fusionarPorId(c.personas, entrante.personas)
       c.gastos = fusionarPorId(c.gastos, entrante.gastos)
       c.pagos = fusionarPorId(c.pagos, entrante.pagos)
+      c.items = fusionarPorId(c.items, entrante.items)
       if (entrante.ajustes) c.ajustes = entrante.ajustes
     })
   }

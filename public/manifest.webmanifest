@@ -1,0 +1,12 @@
+{
+  "name": "Vacaciones",
+  "short_name": "Vacaciones",
+  "description": "El viaje a Bombas y Bombinhas: mapa, cuentas, listas y guía.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffe9c7",
+  "theme_color": "#0ea5b7",
+  "lang": "es",
+  "icons": [{ "src": "icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

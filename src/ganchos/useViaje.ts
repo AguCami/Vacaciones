@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { almacenamiento } from '../almacenamiento/indice'
-import type { Ajustes, Gasto, Pago, Persona } from '../dominio/tipos'
+import { ITEMS_SUGERIDOS } from '../datos/listas'
+import type { Ajustes, Gasto, ItemLista, Pago, Persona } from '../dominio/tipos'
 
 /**
  * Todo el estado del viaje en un solo lugar.
@@ -13,19 +14,22 @@ export function useViaje() {
   const [personas, setPersonas] = useState<Persona[]>([])
   const [gastos, setGastos] = useState<Gasto[]>([])
   const [pagos, setPagos] = useState<Pago[]>([])
+  const [itemsGuardados, setItemsGuardados] = useState<ItemLista[]>([])
   const [ajustes, setAjustes] = useState<Ajustes | null>(null)
   const [cargando, setCargando] = useState(true)
 
   const recargar = useCallback(async () => {
-    const [ps, gs, pg, aj] = await Promise.all([
+    const [ps, gs, pg, it, aj] = await Promise.all([
       almacenamiento.leerPersonas(),
       almacenamiento.leerGastos(),
       almacenamiento.leerPagos(),
+      almacenamiento.leerItems(),
       almacenamiento.leerAjustes(),
     ])
     setPersonas(ps)
     setGastos(gs)
     setPagos(pg)
+    setItemsGuardados(it)
     setAjustes(aj)
     setCargando(false)
   }, [])
@@ -50,6 +54,9 @@ export function useViaje() {
       },
       async anularPago(id: string) {
         await almacenamiento.anularPago(id)
+      },
+      async guardarItem(item: ItemLista) {
+        await almacenamiento.guardarItem({ ...item, actualizadoEn: Date.now() })
       },
       async guardarPersonas(nuevas: Persona[]) {
         await almacenamiento.guardarPersonas(nuevas)
@@ -76,7 +83,17 @@ export function useViaje() {
 
   const pagosVigentes = useMemo(() => pagos.filter((p) => !p.anulado), [pagos])
 
-  return { personas, gastos, gastosVigentes, pagos, pagosVigentes, ajustes, cargando, ...acciones }
+  /**
+   * Los sugeridos de fábrica, pisados por lo que alguien haya tocado, más lo que
+   * agregó cada uno. Un sugerido borrado queda anulado y no vuelve a aparecer.
+   */
+  const items = useMemo(() => {
+    const porId = new Map(ITEMS_SUGERIDOS.map((i) => [i.id, i]))
+    for (const guardado of itemsGuardados) porId.set(guardado.id, guardado)
+    return [...porId.values()].filter((i) => !i.anulado)
+  }, [itemsGuardados])
+
+  return { personas, gastos, gastosVigentes, pagos, pagosVigentes, items, ajustes, cargando, ...acciones }
 }
 
 /**

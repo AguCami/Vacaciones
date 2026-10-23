@@ -1,4 +1,4 @@
-import type { Ajustes, Gasto, Pago, Persona } from '../dominio/tipos'
+import type { Ajustes, Gasto, ItemLista, Pago, Persona } from '../dominio/tipos'
 
 /**
  * La única puerta por la que la app toca los datos.
@@ -22,6 +22,11 @@ export interface Almacenamiento {
   leerPagos(): Promise<Pago[]>
   agregarPago(pago: Pago): Promise<void>
   anularPago(id: string): Promise<void>
+
+  /** Solo los renglones que alguien tocó; los sugeridos viven en el código. */
+  leerItems(): Promise<ItemLista[]>
+  /** Crea o reemplaza un renglón. Borrar es guardarlo con `anulado`. */
+  guardarItem(item: ItemLista): Promise<void>
 
   leerAjustes(): Promise<Ajustes>
   guardarAjustes(ajustes: Ajustes): Promise<void>

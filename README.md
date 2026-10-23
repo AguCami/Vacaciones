@@ -1,7 +1,7 @@
 # Vacaciones 🏖️
 
-El viaje en auto de **Córdoba a Bombas y Bombinhas** en una sola app: el mapa del recorrido y las
-cuentas de los cuatro.
+El viaje en auto de **Córdoba a Bombas y Bombinhas** en una sola app: el mapa del recorrido, las
+cuentas de los cuatro, las listas para no olvidarse nada y una guía para cuando ya estén allá.
 
 Dos pantallas que resuelven dos problemas distintos. El mapa contesta *¿cuánto falta?*. Las cuentas
 contestan *¿quién le debe a quién?*, que es la pregunta que arruina el último día de todas las
@@ -46,6 +46,36 @@ plano de navegación: para manejar, el GPS.
 Todo se calcula en centavos enteros, nunca en decimales. Con decimales, $10 entre 3 da 3,33 a cada uno
 y falta un centavo: aparece después como una deuda de $0,01 que nadie puede saldar nunca. Acá el resto
 se reparte de a un centavo entre los primeros, y la suma de los saldos da exactamente cero siempre.
+
+## Las listas
+
+Papeles, Auto, Valija, Antes de salir y Datos a mano. Vienen con lo habitual para cruzar en auto a
+Brasil ya cargado (`src/datos/listas.ts`), y desde la app se tilda, se borra o se agrega lo que falte.
+Cada renglón puede tener **encargado**: se toca el chip y va rotando entre los cuatro, y con *Solo lo
+que me toca a mí* cada uno ve lo suyo.
+
+Los renglones sugeridos tienen **id fijo**: cuando esto esté en Firestore, los cuatro celulares van a
+tildar el mismo documento en vez de crear cuatro "DNI".
+
+> Los requisitos de frontera cambian: confirmar con Migraciones y la aseguradora antes de salir.
+
+## La guía
+
+Todo texto fijo, así funciona sin señal (`src/datos/guia.ts`):
+
+- **Conversor** reales / pesos / dólares con las cotizaciones de Ajustes.
+- **Emergencias** de Brasil y Argentina: se tocan y llaman.
+- **Frases en portugués** por tema, con cómo se pronuncian y un 🔊 que las lee con la voz del celular.
+- **Playas de Bombinhas** y **paseos cerca**, con link al mapa.
+- **Consejos** de frontera, manejo, plata y sol.
+
+En Ajustes se cargan las **fechas del viaje** y arriba aparece cuántos días faltan.
+
+## Sin señal
+
+La app publicada se guarda sola en el celular (`public/sw.js`) y abre aunque no haya internet — en la
+ruta y en la frontera pasa seguido. Conviene abrirla una vez con señal y agregarla a la pantalla de
+inicio.
 
 ## Dónde se guardan los datos
 
@@ -132,5 +162,10 @@ src/
   componentes/Mapa.tsx      el mapa ilustrado
   componentes/Cuentas.tsx   cargar y listar gastos
   componentes/Balances.tsx  quién debe a quién
-  componentes/Ajustes.tsx   personas, monedas y copias
+  componentes/Ajustes.tsx   personas, fechas, monedas y copias
+  datos/listas.ts           las listas y lo que viene sugerido
+  datos/guia.ts             emergencias, frases, playas, paseos
+  componentes/Listas.tsx    las listas para tildar
+  componentes/Guia.tsx      conversor y guía
+public/sw.js                para que abra sin señal
 ```

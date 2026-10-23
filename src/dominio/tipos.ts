@@ -89,5 +89,35 @@ export type Ajustes = {
   cotizaciones: Cotizaciones
   /** Hasta qué parada llegaron. Mueve el auto en el mapa. */
   paradaActualId?: string
+  /** Día de salida, `AAAA-MM-DD`. Con esto el encabezado cuenta los días. */
+  fechaSalida?: string
+  /** Día de vuelta, `AAAA-MM-DD`. */
+  fechaVuelta?: string
+  actualizadoEn: number
+}
+
+export type ListaId = 'papeles' | 'auto' | 'valija' | 'antes' | 'datos'
+
+/**
+ * Un renglón de una lista: un papel, algo para la valija, una tarea.
+ *
+ * Los renglones que vienen sugeridos tienen un id fijo (`papeles-dni`), así
+ * cuando estén en Firestore los cuatro celulares hablan del mismo documento y
+ * no aparecen cuatro copias de "DNI". Los que agrega cada uno llevan id al azar.
+ */
+export type ItemLista = {
+  id: string
+  lista: ListaId
+  texto: string
+  /** Aclaración corta debajo del texto. */
+  nota?: string
+  hecho: boolean
+  /** Quién lo tildó por última vez. */
+  hechoPor?: string
+  /** Quién se encarga. Vacío: cualquiera. */
+  encargadoId?: string
+  anulado?: boolean
+  creadoEn: number
+  creadoPor: string
   actualizadoEn: number
 }
