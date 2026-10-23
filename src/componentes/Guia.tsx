@@ -9,11 +9,18 @@ import {
   type Lugar,
   type Telefono,
 } from '../datos/guia'
-import { MONEDAS, type Ajustes, type Moneda } from '../dominio/tipos'
+import { MONEDAS, type Ajustes, type Hospedaje as TipoHospedaje, type Moneda } from '../dominio/tipos'
+import { Hospedaje } from './Hospedaje'
 
-export function Guia({ ajustes }: { ajustes: Ajustes }) {
+type Props = {
+  ajustes: Ajustes
+  alGuardarHospedaje: (hospedaje: TipoHospedaje | undefined) => void
+}
+
+export function Guia({ ajustes, alGuardarHospedaje }: Props) {
   return (
     <section className="flex flex-col gap-4">
+      <Hospedaje hospedaje={ajustes.hospedaje} alGuardar={alGuardarHospedaje} />
       <Conversor ajustes={ajustes} />
 
       <Seccion titulo="Emergencias" emoji="🚨" abierta>

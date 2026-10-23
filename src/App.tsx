@@ -124,7 +124,12 @@ export function App() {
             alGuardar={(i) => void viaje.guardarItem(i)}
           />
         )}
-        {pestania === 'guia' && <Guia ajustes={ajustes} />}
+        {pestania === 'guia' && (
+          <Guia
+            ajustes={ajustes}
+            alGuardarHospedaje={(h) => void viaje.guardarAjustes({ ...ajustes, hospedaje: h })}
+          />
+        )}
         {pestania === 'ajustes' && (
           <Ajustes
             personas={viaje.personas}

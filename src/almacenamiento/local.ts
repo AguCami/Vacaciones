@@ -1,3 +1,4 @@
+import { HOSPEDAJE_PRECARGADO } from '../datos/hospedaje'
 import type { Ajustes, Gasto, ItemLista, Pago, Persona } from '../dominio/tipos'
 import type { Almacenamiento } from './tipos'
 
@@ -23,6 +24,7 @@ const INICIAL: Contenido = {
     cotizaciones: { ARS: 1, BRL: 1, USD: 1 },
     paradaActualId: 'cordoba',
     fechaSalida: '2027-01-16',
+    hospedaje: HOSPEDAJE_PRECARGADO,
     actualizadoEn: 0,
   },
 }

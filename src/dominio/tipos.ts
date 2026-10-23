@@ -93,7 +93,32 @@ export type Ajustes = {
   fechaSalida?: string
   /** Día de vuelta, `AAAA-MM-DD`. */
   fechaVuelta?: string
+  /** Donde paran en Bombinhas. Vive en los datos y no en el código: el repo es público. */
+  hospedaje?: Hospedaje
   actualizadoEn: number
+}
+
+export type Hospedaje = {
+  nombre: string
+  direccion: string
+  /** Coordenadas para el "Cómo llegar". Si faltan, se busca por dirección. */
+  lat?: number
+  lon?: number
+  /** `AAAA-MM-DD` */
+  entrada: string
+  /** `HH:MM`, desde qué hora se puede entrar. */
+  horaEntrada?: string
+  salida: string
+  /** `HH:MM`, hasta qué hora hay que dejarlo. */
+  horaSalida?: string
+  anfitrion?: string
+  /** Con código de país, como lo da Airbnb: +55 51 9…. */
+  telefono?: string
+  codigo?: string
+  /** Link a la reserva. */
+  enlace?: string
+  /** Cancelación, pagos, normas de la casa. */
+  notas?: string
 }
 
 export type ListaId = 'papeles' | 'auto' | 'valija' | 'antes' | 'datos'

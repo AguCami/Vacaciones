@@ -6,7 +6,8 @@ export const COLORES = ['#ff6b5a', '#0ea5b7', '#ffc23c', '#2fa36b', '#a06cd5', '
 
 /** Primera vez que se abre la app: quiénes viajan. Sin esto no hay cuentas. */
 export function Bienvenida({ alEmpezar }: { alEmpezar: (personas: Persona[]) => void }) {
-  const [nombres, setNombres] = useState(['', '', '', ''])
+  // Ya vienen los cuatro del viaje; se pueden cambiar acá mismo.
+  const [nombres, setNombres] = useState(['Agu', 'Aldi', 'Mile', 'Fran'])
   const validos = nombres.map((n) => n.trim()).filter((n) => n !== '')
 
   return (
