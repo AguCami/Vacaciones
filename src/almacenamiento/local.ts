@@ -1,4 +1,5 @@
 import { HOSPEDAJE_PRECARGADO } from '../datos/hospedaje'
+import { PERSONAS_DEL_VIAJE } from '../datos/personas'
 import type { Ajustes, Gasto, ItemLista, Pago, Persona } from '../dominio/tipos'
 import type { Almacenamiento } from './tipos'
 
@@ -15,7 +16,7 @@ type Contenido = {
 
 const INICIAL: Contenido = {
   version: 1,
-  personas: [],
+  personas: PERSONAS_DEL_VIAJE,
   gastos: [],
   pagos: [],
   items: [],
@@ -39,6 +40,9 @@ function leer(): Contenido {
     return {
       ...structuredClone(INICIAL),
       ...guardado,
+      // Si quedó guardada una lista vacía (de antes, cuando había bienvenida),
+      // valen los cuatro de fábrica.
+      personas: guardado.personas?.length ? guardado.personas : structuredClone(INICIAL).personas,
       ajustes: { ...structuredClone(INICIAL).ajustes, ...guardado.ajustes },
     }
   } catch {

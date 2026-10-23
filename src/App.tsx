@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Ajustes } from './componentes/Ajustes'
 import { Balances } from './componentes/Balances'
-import { Bienvenida } from './componentes/Bienvenida'
 import { Cuentas } from './componentes/Cuentas'
 import { Guia } from './componentes/Guia'
 import { Intro } from './componentes/Intro'
@@ -67,16 +66,6 @@ export function App() {
     return <div className="grid min-h-dvh place-items-center text-2xl font-black opacity-60">Cargando…</div>
   }
 
-  if (viaje.personas.length === 0) {
-    return (
-      <Bienvenida
-        alEmpezar={(personas) => {
-          void viaje.guardarPersonas(personas)
-          elegir(personas[0].id)
-        }}
-      />
-    )
-  }
 
   const ajustes = viaje.ajustes
   const paradaActualId = ajustes.paradaActualId ?? PARADAS[0].id
@@ -93,7 +82,7 @@ export function App() {
           Córdoba → Bombas y Bombinhas · {estadoDelViaje(parada)}
         </p>
         {faltan !== null && (
-          <p className="mt-2 inline-block rounded-full bg-[var(--color-sol)] px-4 py-1 text-sm font-black text-[var(--color-tinta)] shadow-[var(--shadow-pegado)]">
+          <p className="tarjeta mt-2 inline-block !rounded-full px-4 py-1 text-sm font-black">
             {faltan === 0 ? '¡Hoy salimos! 🚗' : faltan === 1 ? 'Mañana salimos 🚗' : `Faltan ${faltan} días 🚗`}
           </p>
         )}
@@ -174,7 +163,7 @@ export function App() {
               onClick={() => setPestania(p.id)}
               aria-current={pestania === p.id ? 'page' : undefined}
               className={`boton flex-1 px-2 py-2.5 text-xs sm:text-sm ${
-                pestania === p.id ? 'bg-[var(--color-mar)] text-white' : 'bg-transparent shadow-none'
+                pestania === p.id ? 'bg-[var(--color-mar)] text-white' : 'boton-plano bg-transparent'
               }`}
             >
               <span className="block text-lg leading-none" aria-hidden>

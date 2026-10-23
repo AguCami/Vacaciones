@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { COLORES } from './Bienvenida'
+import { COLORES } from '../datos/personas'
 import { MONEDAS, type Ajustes as TipoAjustes, type Moneda, type Persona } from '../dominio/tipos'
 import { nuevoId } from '../ganchos/useViaje'
 
