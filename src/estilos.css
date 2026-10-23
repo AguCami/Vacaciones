@@ -97,18 +97,25 @@ body,
 body {
   margin: 0;
   background: var(--fondo);
-  background-attachment: fixed;
   color: var(--texto);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
 
-/* La playa fija detrás de todo, con un velo para que el texto se lea. */
+/* La playa fija detrás de todo, con un velo para que el texto se lea.
+   El alto es el de la pantalla con la barra del navegador escondida (lvh): si
+   siguiera al alto visible, al hacer scroll en el celular la barra aparece y
+   desaparece, el alto cambia y la foto se reacomoda dando saltos. */
 .fondo {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  height: 100lvh;
   z-index: -1;
+  transform: translateZ(0);
   background-size: cover;
   background-position: center 65%;
 }
