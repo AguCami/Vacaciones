@@ -1,5 +1,14 @@
-import { useMemo, useState } from 'react'
-import { PARADAS, TOTAL_HORAS, TOTAL_KM, kmAcumulados, type Parada } from '../datos/recorrido'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  PARADAS,
+  TOTAL_HORAS,
+  TOTAL_KM,
+  kmAcumulados,
+  paradaAlcanzada,
+  ubicarEnRuta,
+  type Parada,
+} from '../datos/recorrido'
+import { useUbicacion } from '../ganchos/useUbicacion'
 import { caminoTierra, curvaSuave, LIENZO, proyectar } from './escena'
 
 /**
@@ -50,8 +59,30 @@ export function Mapa({ paradaActualId, alLlegar }: Props) {
 
   const parada = PARADAS.find((p) => p.id === seleccionada) ?? null
   const indiceSel = parada ? PARADAS.indexOf(parada) : -1
-  const [autoX, autoY] = puntos[indiceActual]
-  const kmRestantes = TOTAL_KM - acumulados[indiceActual]
+  const ubicacion = useUbicacion()
+  const enRuta = useMemo(
+    () => (ubicacion.posicion ? ubicarEnRuta(ubicacion.posicion.lat, ubicacion.posicion.lon) : null),
+    [ubicacion.posicion],
+  )
+  // A más de 100 km de la ruta no tiene sentido ubicarlos en ella (por ejemplo,
+  // si alguien abre la app desde otro lado): el auto queda donde estaba.
+  const sobreLaRuta = enRuta && enRuta.distanciaKm <= 100 ? enRuta : null
+
+  // Al pasar por una parada, queda marcada sola.
+  const alcanzadaId = sobreLaRuta ? paradaAlcanzada(sobreLaRuta).id : null
+  useEffect(() => {
+    if (alcanzadaId && alcanzadaId !== paradaActualId) alLlegar(alcanzadaId)
+  }, [alcanzadaId, paradaActualId, alLlegar])
+
+  // Con ubicación, el auto va en el punto del tramo donde están; sin ella, en la última parada.
+  const [autoX, autoY] = sobreLaRuta
+    ? (() => {
+        const [ax, ay] = puntos[sobreLaRuta.tramo]
+        const [bx, by] = puntos[sobreLaRuta.tramo + 1]
+        return [ax + (bx - ax) * sobreLaRuta.fraccion, ay + (by - ay) * sobreLaRuta.fraccion]
+      })()
+    : puntos[indiceActual]
+  const kmRestantes = Math.round(sobreLaRuta ? TOTAL_KM - sobreLaRuta.kmHechos : TOTAL_KM - acumulados[indiceActual])
 
   return (
     <section className="flex flex-col gap-4">
@@ -264,8 +295,9 @@ export function Mapa({ paradaActualId, alLlegar }: Props) {
             )
           })}
 
-          {/* El auto, parado en la última parada a la que llegaron. */}
-          <g transform={`translate(${autoX - 30} ${autoY - 30})`}>
+          {/* El auto: con ubicación, encima del punto donde están; sin ella, al
+              costado de la última parada, para no tapar la chinche. */}
+          <g transform={sobreLaRuta ? `translate(${autoX} ${autoY - 16})` : `translate(${autoX - 30} ${autoY - 30})`}>
             <g>
               <ellipse cx="0" cy="15" rx="15" ry="4" fill="#0d2b3a" opacity="0.3" />
               <rect x="-16" y="-2" width="32" height="14" rx="6" fill="#ff6b5a" />
@@ -290,9 +322,42 @@ export function Mapa({ paradaActualId, alLlegar }: Props) {
         <Dato
           titulo="Falta"
           valor={`${kmRestantes.toLocaleString('es-AR')} km`}
-          pie={kmRestantes === 0 ? '¡llegaron!' : `desde ${PARADAS[indiceActual].nombre}`}
+          pie={kmRestantes === 0 ? '¡llegaron!' : sobreLaRuta ? 'desde donde están' : `desde ${PARADAS[indiceActual].nombre}`}
         />
       </div>
+
+      {ubicacion.disponible && (
+        <div className="tarjeta flex flex-wrap items-center gap-3 px-5 py-4">
+          <span className="text-2xl" aria-hidden>
+            📍
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-black">{ubicacion.activa ? 'Siguiendo dónde están' : '¿Dónde vamos?'}</p>
+            <p className="text-xs font-bold opacity-70">
+              {!ubicacion.activa
+                ? 'Con la ubicación del celular el auto se mueve solo por el mapa.'
+                : ubicacion.error
+                  ? ubicacion.error
+                  : !ubicacion.posicion
+                    ? 'Buscando la señal…'
+                    : !sobreLaRuta
+                      ? `Están a ${Math.round(enRuta?.distanciaKm ?? 0)} km de la ruta: el auto queda donde estaba.`
+                      : `Entre ${PARADAS[sobreLaRuta.tramo].nombre} y ${PARADAS[sobreLaRuta.tramo + 1].nombre} · ${new Date(
+                          ubicacion.posicion.cuando,
+                        ).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`}
+            </p>
+          </div>
+          <button
+            type="button"
+            className={`boton px-4 py-2 text-sm ${
+              ubicacion.activa ? 'bg-white/70 text-[var(--color-tinta)]' : 'bg-[var(--color-mar)] text-white'
+            }`}
+            onClick={() => ubicacion.cambiar(!ubicacion.activa)}
+          >
+            {ubicacion.activa ? 'Dejar de seguir' : 'Usar mi ubicación'}
+          </button>
+        </div>
+      )}
 
       {parada ? (
         <article className="tarjeta p-5">
@@ -321,7 +386,7 @@ export function Mapa({ paradaActualId, alLlegar }: Props) {
           </button>
         </article>
       ) : (
-        <p className="px-2 text-center text-sm font-bold opacity-70">
+        <p className="tarjeta self-center !rounded-full px-5 py-2 text-center text-sm font-bold">
           Tocá una chinche del mapa para ver el tramo.
         </p>
       )}

@@ -12,24 +12,15 @@ import { useViaje, useYo } from './ganchos/useViaje'
 
 type Pestania = 'mapa' | 'gastos' | 'cuentas' | 'listas' | 'guia' | 'ajustes'
 
-/** Días que faltan para salir, o null si ya salieron o no hay fecha. */
-function diasParaSalir(fechaSalida?: string): number | null {
-  if (!fechaSalida) return null
-  const salida = new Date(`${fechaSalida}T00:00:00`)
-  const hoy = new Date()
-  hoy.setHours(0, 0, 0, 0)
-  const dias = Math.round((salida.getTime() - hoy.getTime()) / 86_400_000)
-  return dias >= 0 ? dias : null
-}
-
 // Ajustes no está en la barra: se usa poco, y se entra desde el final de la Guía.
 // Cinco botones es lo que entra cómodo en un celular angosto.
-const PESTANIAS: { id: Pestania; nombre: string; emoji: string }[] = [
-  { id: 'mapa', nombre: 'Mapa', emoji: '🗺️' },
-  { id: 'gastos', nombre: 'Gastos', emoji: '🧾' },
-  { id: 'cuentas', nombre: 'Cuentas', emoji: '⚖️' },
-  { id: 'listas', nombre: 'Listas', emoji: '✅' },
-  { id: 'guia', nombre: 'Guía', emoji: '🧭' },
+// Cada una con su ícono dibujado, en public/iconos/<id>.webp.
+const PESTANIAS: { id: Pestania; nombre: string }[] = [
+  { id: 'mapa', nombre: 'Mapa' },
+  { id: 'gastos', nombre: 'Gastos' },
+  { id: 'cuentas', nombre: 'Cuentas' },
+  { id: 'listas', nombre: 'Listas' },
+  { id: 'guia', nombre: 'Guía' },
 ]
 
 export function App() {
@@ -80,11 +71,9 @@ export function App() {
 
   const ajustes = viaje.ajustes
   const paradaActualId = ajustes.paradaActualId ?? PARADAS[0].id
-  const parada = PARADAS.find((p) => p.id === paradaActualId) ?? PARADAS[0]
-  const faltan = parada.tipo === 'salida' ? diasParaSalir(ajustes.fechaSalida) : null
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 pb-28 pt-6">
+    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 pb-32 pt-6">
       {/* De fondo, un cuadro quieto del video de la intro: la playa detrás del vidrio. */}
       <div
         className="fondo"
@@ -101,11 +90,6 @@ export function App() {
             className="mx-auto h-auto w-full max-w-md drop-shadow-[0_2px_6px_rgb(0_0_0/0.18)]"
           />
         </h1>
-        {faltan !== null && (
-          <p className="tarjeta mt-2 inline-block !rounded-full px-4 py-1 text-sm font-black">
-            {faltan === 0 ? '¡Hoy salimos! 🚗' : faltan === 1 ? 'Mañana salimos 🚗' : `Faltan ${faltan} días 🚗`}
-          </p>
-        )}
       </header>
 
       <main className="flex-1">
@@ -178,13 +162,17 @@ export function App() {
               type="button"
               onClick={() => setPestania(p.id)}
               aria-current={pestania === p.id ? 'page' : undefined}
-              className={`boton flex-1 px-2 py-2.5 text-xs sm:text-sm ${
+              className={`boton flex flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-xs sm:text-sm ${
                 pestania === p.id ? 'bg-[var(--color-mar)] text-white' : 'boton-plano bg-transparent'
               }`}
             >
-              <span className="block text-lg leading-none" aria-hidden>
-                {p.emoji}
-              </span>
+              <img
+                src={`${import.meta.env.BASE_URL}iconos/${p.id}.webp`}
+                alt=""
+                width={34}
+                height={34}
+                className="size-[34px]"
+              />
               {p.nombre}
             </button>
           ))}

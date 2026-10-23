@@ -182,3 +182,50 @@ export function kmAcumulados(): number[] {
     return acumulado
   })
 }
+
+export type EnRuta = {
+  /** Índice de la parada desde la que arranca el tramo en el que están. */
+  tramo: number
+  /** Qué parte del tramo ya hicieron, de 0 a 1. */
+  fraccion: number
+  /** Kilómetros de ruta hechos desde Córdoba (aproximado). */
+  kmHechos: number
+  /** A cuántos km en línea recta están de la ruta. */
+  distanciaKm: number
+}
+
+/**
+ * Dónde cae una posición GPS sobre el recorrido.
+ *
+ * Se aproxima cada tramo como una recta entre dos paradas y se busca el punto
+ * más cercano. Alcanza para saber por dónde van; para manejar, el GPS.
+ */
+export function ubicarEnRuta(lat: number, lon: number): EnRuta {
+  // A esta escala, una proyección plana alcanza: grados a km a la latitud del viaje.
+  const kmPorGradoLon = 111.32 * Math.cos((-30 * Math.PI) / 180)
+  const kmPorGradoLat = 110.57
+  const plano = (la: number, lo: number) => [lo * kmPorGradoLon, la * kmPorGradoLat] as const
+  const [px, py] = plano(lat, lon)
+  const acumulados = kmAcumulados()
+
+  let mejor: EnRuta = { tramo: 0, fraccion: 0, kmHechos: 0, distanciaKm: Infinity }
+  for (let i = 0; i < PARADAS.length - 1; i++) {
+    const [ax, ay] = plano(PARADAS[i].lat, PARADAS[i].lon)
+    const [bx, by] = plano(PARADAS[i + 1].lat, PARADAS[i + 1].lon)
+    const dx = bx - ax
+    const dy = by - ay
+    const largo2 = dx * dx + dy * dy
+    const t = largo2 === 0 ? 0 : Math.min(1, Math.max(0, ((px - ax) * dx + (py - ay) * dy) / largo2))
+    const distanciaKm = Math.hypot(px - (ax + t * dx), py - (ay + t * dy))
+    if (distanciaKm < mejor.distanciaKm) {
+      mejor = { tramo: i, fraccion: t, kmHechos: acumulados[i] + t * PARADAS[i + 1].km, distanciaKm }
+    }
+  }
+  return mejor
+}
+
+/** La última parada por la que ya pasaron, según dónde están. */
+export function paradaAlcanzada(enRuta: EnRuta): Parada {
+  // Casi al final del tramo cuenta como llegados: el GPS nunca da justo encima.
+  return PARADAS[enRuta.fraccion > 0.97 ? enRuta.tramo + 1 : enRuta.tramo]
+}
