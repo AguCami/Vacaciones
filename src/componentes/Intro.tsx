@@ -69,7 +69,7 @@ export function Intro({ fechaSalida, alEntrar }: Props) {
               </div>
             </>
           ) : (
-            <p className="py-2 text-xl font-black">{fechaSalida ? '¡Ya estamos en viaje! 🚗' : 'Cargá la fecha de salida en Ajustes'}</p>
+            <p className="py-2 text-xl font-black">¡Ya estamos en viaje! 🚗</p>
           )}
         </div>
 

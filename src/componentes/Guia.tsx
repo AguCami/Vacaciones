@@ -15,9 +15,10 @@ import { Hospedaje } from './Hospedaje'
 type Props = {
   ajustes: Ajustes
   alGuardarHospedaje: (hospedaje: TipoHospedaje | undefined) => void
+  alAbrirAjustes: () => void
 }
 
-export function Guia({ ajustes, alGuardarHospedaje }: Props) {
+export function Guia({ ajustes, alGuardarHospedaje, alAbrirAjustes }: Props) {
   return (
     <section className="flex flex-col gap-4">
       <Hospedaje hospedaje={ajustes.hospedaje} alGuardar={alGuardarHospedaje} />
@@ -56,6 +57,12 @@ export function Guia({ ajustes, alGuardarHospedaje }: Props) {
           ))}
         </ul>
       </Seccion>
+
+      <button type="button" className="tarjeta flex items-center gap-2 p-5 text-left text-lg font-black" onClick={alAbrirAjustes}>
+        <span aria-hidden>⚙️</span>
+        <span className="flex-1">Ajustes</span>
+        <span className="text-sm font-bold opacity-60">cotizaciones, quién sos, copia</span>
+      </button>
     </section>
   )
 }
@@ -138,7 +145,7 @@ function Conversor({ ajustes }: { ajustes: Ajustes }) {
       </ul>
       {sinCargar && (
         <p className="mt-2 text-sm font-bold text-[var(--color-coral-oscuro)]">
-          Falta cargar la cotización en Ajustes ⚙️ — mientras tanto la cuenta da cualquier cosa.
+          Falta cargar la cotización en Ajustes, al final de la Guía. Mientras tanto la cuenta no sirve.
         </p>
       )}
     </div>

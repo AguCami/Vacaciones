@@ -1,17 +1,13 @@
-import { useRef, useState } from 'react'
-import { COLORES } from '../datos/personas'
-import { MONEDAS, type Ajustes as TipoAjustes, type Moneda, type Persona } from '../dominio/tipos'
-import { nuevoId } from '../ganchos/useViaje'
+import { useState } from 'react'
+import { TIPOS_DOLAR, traerCotizaciones } from '../datos/cotizaciones'
+import { MONEDAS, type Ajustes as TipoAjustes, type Moneda, type Persona, type TipoDolar } from '../dominio/tipos'
 
 type Props = {
   personas: Persona[]
   ajustes: TipoAjustes
   yoId: string
   alElegirYo: (id: string) => void
-  alGuardarPersonas: (personas: Persona[]) => void
   alGuardarAjustes: (ajustes: TipoAjustes) => void
-  exportar: () => Promise<string>
-  importar: (json: string) => Promise<void>
 }
 
 export function Ajustes({
@@ -19,13 +15,28 @@ export function Ajustes({
   ajustes,
   yoId,
   alElegirYo,
-  alGuardarPersonas,
   alGuardarAjustes,
-  exportar,
-  importar,
 }: Props) {
-  const archivo = useRef<HTMLInputElement>(null)
-  const [aviso, setAviso] = useState('')
+  const [estado, setEstado] = useState<'' | 'trayendo' | 'error'>('')
+  const tipo = ajustes.tipoDolar ?? 'blue'
+
+  async function actualizar(nuevoTipo: TipoDolar, nuevaBase = ajustes.monedaBase) {
+    setEstado('trayendo')
+    try {
+      const cotizaciones = await traerCotizaciones(nuevoTipo, nuevaBase)
+      alGuardarAjustes({
+        ...ajustes,
+        monedaBase: nuevaBase,
+        tipoDolar: nuevoTipo,
+        cotizaciones,
+        cotizacionManual: false,
+        cotizacionActualizada: Date.now(),
+      })
+      setEstado('')
+    } catch {
+      setEstado('error')
+    }
+  }
 
   const base = ajustes.monedaBase
 
@@ -57,89 +68,33 @@ export function Ajustes({
       </div>
 
       <div className="tarjeta p-5">
-        <h3 className="text-lg font-black">Fechas del viaje</h3>
-        <p className="mt-1 text-sm font-bold opacity-65">Con la de salida, arriba aparece cuántos días faltan.</p>
-        <div className="mt-3 flex flex-wrap gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-black uppercase tracking-wide opacity-60">Salida</span>
-            <input
-              type="date"
-              className={claseCampo}
-              value={ajustes.fechaSalida ?? ''}
-              onChange={(e) => alGuardarAjustes({ ...ajustes, fechaSalida: e.target.value || undefined })}
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-black uppercase tracking-wide opacity-60">Vuelta</span>
-            <input
-              type="date"
-              className={claseCampo}
-              value={ajustes.fechaVuelta ?? ''}
-              min={ajustes.fechaSalida}
-              onChange={(e) => alGuardarAjustes({ ...ajustes, fechaVuelta: e.target.value || undefined })}
-            />
-          </label>
-        </div>
-      </div>
-
-      <div className="tarjeta p-5">
-        <h3 className="text-lg font-black">Quiénes viajan</h3>
-        <ul className="mt-3 flex flex-col gap-2">
-          {personas.map((p, i) => (
-            <li key={p.id} className="flex items-center gap-2">
-              <input
-                type="color"
-                className="size-9 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0"
-                value={p.color}
-                onChange={(e) =>
-                  alGuardarPersonas(personas.map((x) => (x.id === p.id ? { ...x, color: e.target.value } : x)))
-                }
-                aria-label={`Color de ${p.nombre}`}
-              />
-              <input
-                className="flex-1 rounded-2xl border-2 border-white/70 bg-white/80 px-4 py-2 font-bold text-[var(--color-tinta)] outline-none focus:border-[var(--color-mar)]"
-                value={p.nombre}
-                onChange={(e) =>
-                  alGuardarPersonas(personas.map((x) => (x.id === p.id ? { ...x, nombre: e.target.value } : x)))
-                }
-              />
-              {personas.length > 2 && (
-                <button
-                  type="button"
-                  className="px-2 text-sm font-bold text-[var(--color-coral-oscuro)] underline"
-                  onClick={() => {
-                    if (confirm(`¿Sacar a ${p.nombre}? Los gastos que ya cargó quedan igual.`)) {
-                      alGuardarPersonas(personas.filter((x) => x.id !== p.id))
-                    }
-                  }}
-                >
-                  sacar
-                </button>
-              )}
-              <span className="sr-only">{i}</span>
-            </li>
-          ))}
-        </ul>
-        <button
-          type="button"
-          className="boton mt-3 bg-white/70 px-4 py-2 text-sm"
-          onClick={() =>
-            alGuardarPersonas([
-              ...personas,
-              { id: nuevoId(), nombre: `Nombre ${personas.length + 1}`, color: COLORES[personas.length % COLORES.length] },
-            ])
-          }
-        >
-          + Sumar a alguien
-        </button>
-      </div>
-
-      <div className="tarjeta p-5">
         <h3 className="text-lg font-black">Monedas</h3>
         <p className="mt-1 text-sm font-bold opacity-65">
-          Los totales se muestran en la moneda base. Poné la cotización a la que cambiaron de verdad, no
-          la del diario: la cuenta que importa es la que pagaron ustedes.
+          La cotización del día se trae sola de internet. Si cambiaron plata a otro valor, escribilo a mano
+          y queda ese.
         </p>
+
+        <div className="mt-3 flex flex-col gap-1">
+          <span className="text-xs font-black uppercase tracking-wide opacity-60">Con qué dólar</span>
+          <div className="flex flex-wrap gap-2">
+            {(Object.keys(TIPOS_DOLAR) as TipoDolar[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                disabled={estado === 'trayendo'}
+                className={`boton px-4 py-2 text-sm ${
+                  tipo === t && !ajustes.cotizacionManual ? 'bg-[var(--color-mar)] text-white' : 'bg-white/70 text-[var(--color-tinta)]'
+                }`}
+                onClick={() => void actualizar(t)}
+              >
+                {TIPOS_DOLAR[t].nombre}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs font-bold opacity-65">
+            {TIPOS_DOLAR[tipo].ayuda} El real se calcula al mismo tipo de dólar.
+          </p>
+        </div>
 
         <div className="mt-3 flex flex-col gap-1">
           <span className="text-xs font-black uppercase tracking-wide opacity-60">Moneda base</span>
@@ -152,13 +107,15 @@ export function Ajustes({
                   base === m ? 'bg-[var(--color-mar)] text-white' : 'bg-white/70 text-[var(--color-tinta)]'
                 }`}
                 onClick={() =>
-                  alGuardarAjustes({
-                    ...ajustes,
-                    monedaBase: m,
-                    // La base siempre vale 1 consigo misma; si no, todos los
-                    // totales quedarían multiplicados por un número al azar.
-                    cotizaciones: { ...ajustes.cotizaciones, [m]: 1 },
-                  })
+                  ajustes.cotizacionManual
+                    ? alGuardarAjustes({
+                        ...ajustes,
+                        monedaBase: m,
+                        // La base siempre vale 1 consigo misma; si no, todos los
+                        // totales quedarían multiplicados por un número al azar.
+                        cotizaciones: { ...ajustes.cotizaciones, [m]: 1 },
+                      })
+                    : void actualizar(tipo, m)
                 }
               >
                 {MONEDAS[m].nombre}
@@ -182,7 +139,11 @@ export function Ajustes({
                   onChange={(e) => {
                     const valor = Number(e.target.value.replace(',', '.'))
                     if (!Number.isFinite(valor) || valor < 0) return
-                    alGuardarAjustes({ ...ajustes, cotizaciones: { ...ajustes.cotizaciones, [m]: valor } })
+                    alGuardarAjustes({
+                      ...ajustes,
+                      cotizaciones: { ...ajustes.cotizaciones, [m]: valor },
+                      cotizacionManual: true,
+                    })
                   }}
                 />
                 <span className="text-sm font-bold opacity-70">
@@ -191,61 +152,38 @@ export function Ajustes({
               </li>
             ))}
         </ul>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm font-bold">
+          {estado === 'trayendo' ? (
+            <span className="opacity-70">Trayendo la cotización…</span>
+          ) : estado === 'error' ? (
+            <span className="text-[var(--color-coral-oscuro)]">
+              No se pudo traer la cotización. Sin señal queda la última que había.
+            </span>
+          ) : ajustes.cotizacionManual ? (
+            <span className="opacity-70">Cotización escrita a mano.</span>
+          ) : ajustes.cotizacionActualizada ? (
+            <span className="opacity-70">
+              Actualizada{' '}
+              {new Date(ajustes.cotizacionActualizada).toLocaleString('es-AR', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            disabled={estado === 'trayendo'}
+            className="font-black underline underline-offset-2"
+            onClick={() => void actualizar(tipo)}
+          >
+            {ajustes.cotizacionManual ? 'volver a la del día' : 'actualizar'}
+          </button>
+        </div>
       </div>
 
-      <div className="tarjeta p-5">
-        <h3 className="text-lg font-black">Copia de seguridad</h3>
-        <p className="mt-1 text-sm font-bold opacity-65">
-          Por ahora los datos viven solo en este celular. Bajá el archivo cada tanto — y sobre todo antes
-          de pasar la app a Firebase, para no perder nada de lo cargado.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="boton bg-[var(--color-mar)] px-4 py-2 text-sm text-white"
-            onClick={async () => {
-              const json = await exportar()
-              const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
-              const a = document.createElement('a')
-              a.href = url
-              a.download = `vacaciones-${new Date().toISOString().slice(0, 10)}.json`
-              a.click()
-              URL.revokeObjectURL(url)
-              setAviso('Archivo descargado.')
-            }}
-          >
-            Bajar copia
-          </button>
-          <button
-            type="button"
-            className="boton bg-white/70 px-4 py-2 text-sm"
-            onClick={() => archivo.current?.click()}
-          >
-            Traer copia
-          </button>
-          <input
-            ref={archivo}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={async (e) => {
-              const f = e.target.files?.[0]
-              if (!f) return
-              try {
-                await importar(await f.text())
-                setAviso('Listo: se juntó con lo que ya había.')
-              } catch {
-                setAviso('Ese archivo no se pudo leer.')
-              }
-              e.target.value = ''
-            }}
-          />
-        </div>
-        {aviso && <p className="mt-2 text-sm font-bold text-[var(--color-palmera)]">{aviso}</p>}
-      </div>
     </section>
   )
 }
-
-const claseCampo =
-  'rounded-2xl border-2 border-white/70 bg-white/80 px-4 py-2.5 font-bold text-[var(--color-tinta)] outline-none focus:border-[var(--color-mar)]'

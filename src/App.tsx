@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Ajustes } from './componentes/Ajustes'
 import { Balances } from './componentes/Balances'
 import { Cuentas } from './componentes/Cuentas'
@@ -6,6 +6,7 @@ import { Guia } from './componentes/Guia'
 import { Intro } from './componentes/Intro'
 import { Listas } from './componentes/Listas'
 import { Mapa } from './componentes/Mapa'
+import { traerCotizaciones, VIGENCIA_MS } from './datos/cotizaciones'
 import { PARADAS } from './datos/recorrido'
 import { useViaje, useYo } from './ganchos/useViaje'
 
@@ -28,7 +29,7 @@ function diasParaSalir(fechaSalida?: string): number | null {
   return dias >= 0 ? dias : null
 }
 
-// Ajustes no está en la barra: se usa una vez y queda arriba, en el engranaje.
+// Ajustes no está en la barra: se usa poco, y se entra desde el final de la Guía.
 // Cinco botones es lo que entra cómodo en un celular angosto.
 const PESTANIAS: { id: Pestania; nombre: string; emoji: string }[] = [
   { id: 'mapa', nombre: 'Mapa', emoji: '🗺️' },
@@ -60,6 +61,23 @@ export function App() {
     }
   }
 
+  // La cotización del día se trae sola al abrir, salvo que alguien la haya
+  // escrito a mano. Sin señal no pasa nada: queda la última que había.
+  // Se intenta una sola vez por apertura, así sin señal no queda reintentando.
+  const ajustesCargados = viaje.ajustes
+  const guardarAjustes = viaje.guardarAjustes
+  const yaIntento = useRef(false)
+  useEffect(() => {
+    if (yaIntento.current || !ajustesCargados || ajustesCargados.cotizacionManual) return
+    if (Date.now() - (ajustesCargados.cotizacionActualizada ?? 0) < VIGENCIA_MS) return
+    yaIntento.current = true
+    traerCotizaciones(ajustesCargados.tipoDolar ?? 'blue', ajustesCargados.monedaBase)
+      .then((cotizaciones) =>
+        guardarAjustes({ ...ajustesCargados, cotizaciones, cotizacionActualizada: Date.now() }),
+      )
+      .catch(() => {})
+  }, [ajustesCargados, guardarAjustes])
+
   if (enIntro) return <Intro fechaSalida={viaje.ajustes?.fechaSalida} alEntrar={entrar} />
 
   if (viaje.cargando || !viaje.ajustes) {
@@ -74,6 +92,12 @@ export function App() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 pb-28 pt-6">
+      {/* De fondo, un cuadro quieto del video de la intro: la playa detrás del vidrio. */}
+      <div
+        className="fondo"
+        style={{ backgroundImage: `url(${import.meta.env.BASE_URL}fondo.jpg)` }}
+        aria-hidden
+      />
       <header className="relative mb-5 text-center">
         <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
           Vacaciones <span aria-hidden>🏖️</span>
@@ -86,17 +110,6 @@ export function App() {
             {faltan === 0 ? '¡Hoy salimos! 🚗' : faltan === 1 ? 'Mañana salimos 🚗' : `Faltan ${faltan} días 🚗`}
           </p>
         )}
-        <button
-          type="button"
-          onClick={() => setPestania('ajustes')}
-          aria-label="Ajustes"
-          aria-current={pestania === 'ajustes' ? 'page' : undefined}
-          className={`boton absolute right-0 top-0 grid size-11 place-items-center text-xl ${
-            pestania === 'ajustes' ? 'bg-[var(--color-mar)]' : 'bg-white/70'
-          }`}
-        >
-          ⚙️
-        </button>
       </header>
 
       <main className="flex-1">
@@ -137,7 +150,17 @@ export function App() {
           <Guia
             ajustes={ajustes}
             alGuardarHospedaje={(h) => void viaje.guardarAjustes({ ...ajustes, hospedaje: h })}
+            alAbrirAjustes={() => setPestania('ajustes')}
           />
+        )}
+        {pestania === 'ajustes' && (
+          <button
+            type="button"
+            className="mb-3 text-sm font-black underline underline-offset-2 opacity-80"
+            onClick={() => setPestania('guia')}
+          >
+            ← Volver a la Guía
+          </button>
         )}
         {pestania === 'ajustes' && (
           <Ajustes
@@ -145,10 +168,7 @@ export function App() {
             ajustes={ajustes}
             yoId={yoId}
             alElegirYo={elegir}
-            alGuardarPersonas={(ps) => void viaje.guardarPersonas(ps)}
             alGuardarAjustes={(a) => void viaje.guardarAjustes(a)}
-            exportar={viaje.exportar}
-            importar={viaje.importar}
           />
         )}
       </main>

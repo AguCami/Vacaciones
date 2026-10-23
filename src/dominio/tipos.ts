@@ -84,9 +84,18 @@ export type Pago = {
  */
 export type Cotizaciones = Record<Moneda, number>
 
+/** La casa del dólar en DolarApi: blue, oficial, bolsa (MEP) o tarjeta. */
+export type TipoDolar = 'blue' | 'oficial' | 'bolsa' | 'tarjeta'
+
 export type Ajustes = {
   monedaBase: Moneda
   cotizaciones: Cotizaciones
+  /** Con qué dólar se traen las cotizaciones del día. */
+  tipoDolar?: TipoDolar
+  /** Si alguien escribió una cotización a mano, deja de traerse sola. */
+  cotizacionManual?: boolean
+  /** Cuándo se trajo la última cotización de internet (ms). */
+  cotizacionActualizada?: number
   /** Hasta qué parada llegaron. Mueve el auto en el mapa. */
   paradaActualId?: string
   /** Día de salida, `AAAA-MM-DD`. Con esto el encabezado cuenta los días. */
