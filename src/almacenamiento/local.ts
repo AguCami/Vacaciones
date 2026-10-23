@@ -22,6 +22,7 @@ const INICIAL: Contenido = {
     monedaBase: 'ARS',
     cotizaciones: { ARS: 1, BRL: 1, USD: 1 },
     paradaActualId: 'cordoba',
+    fechaSalida: '2027-01-16',
     actualizadoEn: 0,
   },
 }
@@ -30,7 +31,14 @@ function leer(): Contenido {
   try {
     const crudo = localStorage.getItem(CLAVE)
     if (!crudo) return structuredClone(INICIAL)
-    return { ...structuredClone(INICIAL), ...JSON.parse(crudo) }
+    const guardado = JSON.parse(crudo) as Partial<Contenido>
+    // Los ajustes se juntan campo por campo: así un dato nuevo de fábrica (como
+    // la fecha de salida) les llega también a quienes ya tenían la app cargada.
+    return {
+      ...structuredClone(INICIAL),
+      ...guardado,
+      ajustes: { ...structuredClone(INICIAL).ajustes, ...guardado.ajustes },
+    }
   } catch {
     // Storage bloqueado (modo incógnito, permisos) o JSON roto: la app tiene que
     // abrir igual, aunque sea vacía, en vez de quedar en pantalla blanca.
