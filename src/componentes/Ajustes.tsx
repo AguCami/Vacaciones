@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { TIPOS_DOLAR, traerCotizaciones } from '../datos/cotizaciones'
+import { TIPOS_DOLAR } from '../datos/cotizaciones'
+import type { useCotizacion } from '../ganchos/useCotizacion'
 import { MONEDAS, type Ajustes as TipoAjustes, type Moneda, type Persona, type TipoDolar } from '../dominio/tipos'
 
 type Props = {
@@ -8,6 +8,7 @@ type Props = {
   yoId: string
   alElegirYo: (id: string) => void
   alGuardarAjustes: (ajustes: TipoAjustes) => void
+  cotizacion: ReturnType<typeof useCotizacion>
 }
 
 export function Ajustes({
@@ -16,27 +17,10 @@ export function Ajustes({
   yoId,
   alElegirYo,
   alGuardarAjustes,
+  cotizacion,
 }: Props) {
-  const [estado, setEstado] = useState<'' | 'trayendo' | 'error'>('')
+  const { estado, actualizar } = cotizacion
   const tipo = ajustes.tipoDolar ?? 'blue'
-
-  async function actualizar(nuevoTipo: TipoDolar, nuevaBase = ajustes.monedaBase) {
-    setEstado('trayendo')
-    try {
-      const cotizaciones = await traerCotizaciones(nuevoTipo, nuevaBase)
-      alGuardarAjustes({
-        ...ajustes,
-        monedaBase: nuevaBase,
-        tipoDolar: nuevoTipo,
-        cotizaciones,
-        cotizacionManual: false,
-        cotizacionActualizada: Date.now(),
-      })
-      setEstado('')
-    } catch {
-      setEstado('error')
-    }
-  }
 
   const base = ajustes.monedaBase
 

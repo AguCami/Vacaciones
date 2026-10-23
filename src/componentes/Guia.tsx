@@ -10,19 +10,21 @@ import {
   type Telefono,
 } from '../datos/guia'
 import { MONEDAS, type Ajustes, type Hospedaje as TipoHospedaje, type Moneda } from '../dominio/tipos'
+import type { useCotizacion } from '../ganchos/useCotizacion'
 import { Hospedaje } from './Hospedaje'
 
 type Props = {
   ajustes: Ajustes
   alGuardarHospedaje: (hospedaje: TipoHospedaje | undefined) => void
   alAbrirAjustes: () => void
+  cotizacion: ReturnType<typeof useCotizacion>
 }
 
-export function Guia({ ajustes, alGuardarHospedaje, alAbrirAjustes }: Props) {
+export function Guia({ ajustes, alGuardarHospedaje, alAbrirAjustes, cotizacion }: Props) {
   return (
     <section className="flex flex-col gap-4">
       <Hospedaje hospedaje={ajustes.hospedaje} alGuardar={alGuardarHospedaje} />
-      <Conversor ajustes={ajustes} />
+      <Conversor ajustes={ajustes} cotizacion={cotizacion} />
 
       <Seccion titulo="Emergencias" emoji="🚨" abierta>
         <p className="text-sm font-bold opacity-65">Tocá un número para llamar. Son gratis desde cualquier celular.</p>
@@ -92,7 +94,7 @@ function Seccion({
   )
 }
 
-function Conversor({ ajustes }: { ajustes: Ajustes }) {
+function Conversor({ ajustes, cotizacion }: { ajustes: Ajustes; cotizacion: ReturnType<typeof useCotizacion> }) {
   const [monto, setMonto] = useState('100')
   const [desde, setDesde] = useState<Moneda>('BRL')
 
@@ -143,11 +145,34 @@ function Conversor({ ajustes }: { ajustes: Ajustes }) {
           </li>
         ))}
       </ul>
-      {sinCargar && (
-        <p className="mt-2 text-sm font-bold text-[var(--color-coral-oscuro)]">
-          Falta cargar la cotización en Ajustes, al final de la Guía. Mientras tanto la cuenta no sirve.
-        </p>
-      )}
+      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold">
+        {cotizacion.estado === 'trayendo' ? (
+          <span className="opacity-70">Trayendo la cotización de hoy…</span>
+        ) : cotizacion.estado === 'error' && sinCargar ? (
+          <span className="text-[var(--color-coral-oscuro)]">
+            No se pudo traer la cotización: hace falta internet. Mientras tanto la cuenta no sirve.
+          </span>
+        ) : cotizacion.estado === 'error' ? (
+          <span className="opacity-70">Sin internet: se usa la última cotización que había.</span>
+        ) : ajustes.cotizacionManual ? (
+          <span className="opacity-70">Cotización escrita a mano en Ajustes.</span>
+        ) : ajustes.cotizacionActualizada ? (
+          <span className="opacity-70">
+            {ajustes.cotizacionFuente ?? 'Cotización de hoy'} ·{' '}
+            {new Date(ajustes.cotizacionActualizada).toLocaleString('es-AR', {
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </span>
+        ) : null}
+        {cotizacion.estado !== 'trayendo' && !ajustes.cotizacionManual && (
+          <button type="button" className="font-black underline underline-offset-2" onClick={() => void cotizacion.actualizar()}>
+            actualizar
+          </button>
+        )}
+      </div>
     </div>
   )
 }

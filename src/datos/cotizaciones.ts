@@ -29,18 +29,39 @@ async function pedir<T>(ruta: string): Promise<T> {
  * dólar blue, se lo lleva al mismo tipo de dólar con el cruce oficial:
  * si el dólar elegido vale X veces el oficial, el real también.
  */
-export async function traerCotizaciones(tipo: TipoDolar, base: Moneda): Promise<Cotizaciones> {
+export type Traidas = { cotizaciones: Cotizaciones; fuente: string }
+
+/**
+ * Trae la cotización del día. Si DolarApi no responde, usa de respaldo el tipo
+ * de cambio oficial de open.er-api.com, para no quedar con todo en 1.
+ */
+export async function traerCotizaciones(tipo: TipoDolar, base: Moneda): Promise<Traidas> {
+  try {
+    return { cotizaciones: await deDolarApi(tipo, base), fuente: `Dólar ${TIPOS_DOLAR[tipo].nombre.toLowerCase()}` }
+  } catch {
+    return { cotizaciones: await deRespaldo(base), fuente: 'Oficial (respaldo)' }
+  }
+}
+
+async function deRespaldo(base: Moneda): Promise<Cotizaciones> {
+  const respuesta = await fetch('https://open.er-api.com/v6/latest/USD')
+  if (!respuesta.ok) throw new Error(`open.er-api respondió ${respuesta.status}`)
+  const { rates } = (await respuesta.json()) as { rates: Record<string, number> }
+  if (!rates?.ARS || !rates?.BRL) throw new Error('Faltan datos en la respuesta')
+  return enBase({ ARS: 1, USD: rates.ARS, BRL: rates.ARS / rates.BRL }, base)
+}
+
+async function deDolarApi(tipo: TipoDolar, base: Moneda): Promise<Cotizaciones> {
   const [dolares, real] = await Promise.all([pedir<Respuesta[]>('dolares'), pedir<Respuesta>('cotizaciones/brl')])
   const elegido = dolares.find((d) => d.casa === tipo)?.venta
   const oficial = dolares.find((d) => d.casa === 'oficial')?.venta
   if (!elegido || !oficial || !real.venta) throw new Error('Faltan datos en la respuesta')
 
-  // Cuántos pesos vale una unidad de cada moneda.
-  const enPesos: Record<Moneda, number> = {
-    ARS: 1,
-    USD: elegido,
-    BRL: real.venta * (elegido / oficial),
-  }
+  return enBase({ ARS: 1, USD: elegido, BRL: real.venta * (elegido / oficial) }, base)
+}
+
+/** De "cuántos pesos vale cada moneda" a "cuánto vale cada una en la moneda base". */
+function enBase(enPesos: Record<Moneda, number>, base: Moneda): Cotizaciones {
   return {
     ARS: redondear(enPesos.ARS / enPesos[base]),
     USD: redondear(enPesos.USD / enPesos[base]),

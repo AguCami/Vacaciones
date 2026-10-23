@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Ajustes } from './componentes/Ajustes'
 import { Balances } from './componentes/Balances'
 import { Cuentas } from './componentes/Cuentas'
@@ -6,8 +6,8 @@ import { Guia } from './componentes/Guia'
 import { Intro } from './componentes/Intro'
 import { Listas } from './componentes/Listas'
 import { Mapa } from './componentes/Mapa'
-import { traerCotizaciones, VIGENCIA_MS } from './datos/cotizaciones'
 import { PARADAS } from './datos/recorrido'
+import { useCotizacion } from './ganchos/useCotizacion'
 import { useViaje, useYo } from './ganchos/useViaje'
 
 type Pestania = 'mapa' | 'gastos' | 'cuentas' | 'listas' | 'guia' | 'ajustes'
@@ -45,22 +45,7 @@ export function App() {
     }
   }
 
-  // La cotización del día se trae sola al abrir, salvo que alguien la haya
-  // escrito a mano. Sin señal no pasa nada: queda la última que había.
-  // Se intenta una sola vez por apertura, así sin señal no queda reintentando.
-  const ajustesCargados = viaje.ajustes
-  const guardarAjustes = viaje.guardarAjustes
-  const yaIntento = useRef(false)
-  useEffect(() => {
-    if (yaIntento.current || !ajustesCargados || ajustesCargados.cotizacionManual) return
-    if (Date.now() - (ajustesCargados.cotizacionActualizada ?? 0) < VIGENCIA_MS) return
-    yaIntento.current = true
-    traerCotizaciones(ajustesCargados.tipoDolar ?? 'blue', ajustesCargados.monedaBase)
-      .then((cotizaciones) =>
-        guardarAjustes({ ...ajustesCargados, cotizaciones, cotizacionActualizada: Date.now() }),
-      )
-      .catch(() => {})
-  }, [ajustesCargados, guardarAjustes])
+  const cotizacion = useCotizacion(viaje.ajustes, viaje.guardarAjustes)
 
   if (enIntro) return <Intro fechaSalida={viaje.ajustes?.fechaSalida} alEntrar={entrar} />
 
@@ -131,6 +116,7 @@ export function App() {
             ajustes={ajustes}
             alGuardarHospedaje={(h) => void viaje.guardarAjustes({ ...ajustes, hospedaje: h })}
             alAbrirAjustes={() => setPestania('ajustes')}
+            cotizacion={cotizacion}
           />
         )}
         {pestania === 'ajustes' && (
@@ -149,6 +135,7 @@ export function App() {
             yoId={yoId}
             alElegirYo={elegir}
             alGuardarAjustes={(a) => void viaje.guardarAjustes(a)}
+            cotizacion={cotizacion}
           />
         )}
       </main>

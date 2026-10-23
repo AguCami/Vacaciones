@@ -96,6 +96,8 @@ export type Ajustes = {
   cotizacionManual?: boolean
   /** Cuándo se trajo la última cotización de internet (ms). */
   cotizacionActualizada?: number
+  /** De dónde salió: "Dólar blue", "Oficial (respaldo)". */
+  cotizacionFuente?: string
   /** Hasta qué parada llegaron. Mueve el auto en el mapa. */
   paradaActualId?: string
   /** Día de salida, `AAAA-MM-DD`. Con esto el encabezado cuenta los días. */
