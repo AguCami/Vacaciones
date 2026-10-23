@@ -4,6 +4,7 @@ import { Balances } from './componentes/Balances'
 import { Bienvenida } from './componentes/Bienvenida'
 import { Cuentas } from './componentes/Cuentas'
 import { Guia } from './componentes/Guia'
+import { Intro } from './componentes/Intro'
 import { Listas } from './componentes/Listas'
 import { Mapa } from './componentes/Mapa'
 import { PARADAS } from './datos/recorrido'
@@ -42,6 +43,25 @@ export function App() {
   const viaje = useViaje()
   const { yoId, elegir } = useYo(viaje.personas)
   const [pestania, setPestania] = useState<Pestania>('mapa')
+  const [enIntro, setEnIntro] = useState(() => {
+    // Una vez por visita: si recargan la página no hace falta volver a verla.
+    try {
+      return sessionStorage.getItem('vacaciones-intro') !== 'vista'
+    } catch {
+      return true
+    }
+  })
+
+  function entrar() {
+    setEnIntro(false)
+    try {
+      sessionStorage.setItem('vacaciones-intro', 'vista')
+    } catch {
+      // Sin storage se vuelve a ver al recargar, nada más.
+    }
+  }
+
+  if (enIntro) return <Intro fechaSalida={viaje.ajustes?.fechaSalida} alEntrar={entrar} />
 
   if (viaje.cargando || !viaje.ajustes) {
     return <div className="grid min-h-dvh place-items-center text-2xl font-black opacity-60">Cargando…</div>

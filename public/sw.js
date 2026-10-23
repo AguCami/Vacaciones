@@ -5,7 +5,7 @@
  * si no hay red, sale de la copia guardada. Los archivos de assets/ llevan un
  * hash en el nombre y nunca cambian, así que esos van directo de la copia.
  */
-const CACHE = 'vacaciones-v1'
+const CACHE = 'vacaciones-v2'
 
 self.addEventListener('install', () => self.skipWaiting())
 
@@ -40,7 +40,8 @@ self.addEventListener('fetch', (evento) => {
   evento.respondWith(
     fetch(pedido)
       .then((respuesta) => {
-        if (respuesta.ok) {
+        // Solo respuestas enteras: el video llega por pedazos (206) y esos no se guardan.
+        if (respuesta.status === 200) {
           const copia = respuesta.clone()
           void caches.open(CACHE).then((c) => c.put(pedido, copia))
         }
