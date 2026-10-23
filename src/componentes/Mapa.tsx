@@ -9,13 +9,14 @@ import { caminoTierra, curvaSuave, LIENZO, proyectar } from './escena'
  * Santa Fe y Paraná están a 25 km, y Paso de los Libres y Uruguaiana a 12 km
  * con el río en el medio. Sin esto, los nombres se pisan y no se lee ninguno.
  */
-const ETIQUETAS: Record<string, { dx: number; dy: number; anclaje: 'start' | 'end' }> = {
+const ETIQUETAS: Record<string, { dx: number; dy: number; anclaje: 'start' | 'middle' | 'end' }> = {
   cordoba: { dx: 17, dy: 27, anclaje: 'start' },
   'santa-fe': { dx: -12, dy: -14, anclaje: 'end' },
   parana: { dx: 10, dy: 26, anclaje: 'start' },
   concordia: { dx: 15, dy: 5, anclaje: 'start' },
   'paso-de-los-libres': { dx: -11, dy: -16, anclaje: 'end' },
   uruguaiana: { dx: 15, dy: 22, anclaje: 'start' },
+  'sao-gabriel': { dx: 0, dy: 26, anclaje: 'middle' },
   'porto-alegre': { dx: 15, dy: 7, anclaje: 'start' },
   torres: { dx: 15, dy: 3, anclaje: 'start' },
   florianopolis: { dx: -14, dy: 20, anclaje: 'end' },

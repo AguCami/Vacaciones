@@ -91,7 +91,7 @@ const SUGERIDOS: Sugerido[] = [
     'Pagar la tasa ambiental de Bombinhas (TPA)',
     'Se cobra por auto en temporada. Se paga online antes de llegar: ver la página de la Prefeitura.',
   ],
-  ['antes', 'alojamientos', 'Confirmar los alojamientos', 'Concordia, Porto Alegre y Bombinhas.'],
+  ['antes', 'alojamientos', 'Confirmar los alojamientos', 'São Gabriel (noche del 16) y Bombinhas.'],
   ['antes', 'casa', 'Dejar la casa lista', 'Plantas, heladera, llaves a alguien de confianza.'],
   ['antes', 'copia', 'Bajar una copia de esta app', 'Desde Ajustes, por si se borra algo.'],
 ]

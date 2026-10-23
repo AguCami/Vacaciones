@@ -9,20 +9,22 @@ vacaciones compartidas.
 
 ## El recorrido
 
-2.142 km y unas 27,5 horas de manejo puro, por el paso de **Paso de los Libres / Uruguaiana**.
+2.142 km y unas 27,5 horas de manejo puro, por el paso de **Paso de los Libres / Uruguaiana**, en dos
+días: salida el 16 de enero bien temprano, noche en **São Gabriel** y llegada el 17 a Bombas.
 
 | # | Parada | Tramo | Acumulado |
 |---|---|---|---|
 | 1 | Córdoba | — | 0 km |
 | 2 | Santa Fe | 340 km · 4 h | 340 km |
 | 3 | Paraná | 25 km · 0,5 h | 365 km |
-| 4 | Concordia 🛏️ | 280 km · 3,5 h | 645 km |
+| 4 | Concordia | 280 km · 3,5 h | 645 km |
 | 5 | Paso de los Libres | 320 km · 4 h | 965 km |
 | 6 | Uruguaiana 🇧🇷 | 12 km · 1,5 h | 977 km |
-| 7 | Porto Alegre 🛏️ | 630 km · 7 h | 1.607 km |
-| 8 | Torres | 200 km · 2,5 h | 1.807 km |
-| 9 | Florianópolis | 270 km · 3,5 h | 2.077 km |
-| 10 | Bombas y Bombinhas 🛏️ | 65 km · 1 h | 2.142 km |
+| 7 | São Gabriel 🛏️ | 310 km · 3,5 h | 1.287 km |
+| 8 | Porto Alegre | 320 km · 3,5 h | 1.607 km |
+| 9 | Torres | 200 km · 2,5 h | 1.807 km |
+| 10 | Florianópolis | 270 km · 3,5 h | 2.077 km |
+| 11 | Bombas y Bombinhas 🛏️ | 65 km · 1 h | 2.142 km |
 
 Los kilómetros y las horas son de ruta y aproximados, sin contar paradas ni la espera en la frontera.
 

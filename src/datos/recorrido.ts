@@ -1,6 +1,9 @@
 /**
  * El recorrido: Córdoba → Bombas y Bombinhas (Santa Catarina, Brasil).
  *
+ * Dos días: salida el 16 de enero bien temprano, noche en São Gabriel y
+ * llegada el 17 a Bombas.
+ *
  * Ruta por el paso de Paso de los Libres / Uruguaiana, que es la más directa
  * desde Córdoba hacia la costa catarinense.
  *
@@ -78,8 +81,7 @@ export const PARADAS: Parada[] = [
     tipo: 'parada',
     km: 280,
     horas: 3.5,
-    dormir: true,
-    nota: 'Buen lugar para cortar la primera jornada: quedan ~1.400 km.',
+    nota: 'Se pasa de largo. Ojo con el horario: hay que cruzar con luz.',
   },
   {
     id: 'paso-de-los-libres',
@@ -106,6 +108,19 @@ export const PARADAS: Parada[] = [
     nota: 'Frontera sobre el puente. Seguro del auto, cédula verde y migraciones. La espera puede ser larga en temporada.',
   },
   {
+    id: 'sao-gabriel',
+    nombre: 'São Gabriel',
+    provincia: 'Rio Grande do Sul',
+    pais: 'BR',
+    lat: -30.34,
+    lon: -54.32,
+    tipo: 'parada',
+    km: 310,
+    horas: 3.5,
+    dormir: true,
+    nota: 'Por BR-290. Se duerme acá la noche del 16: es el día más largo, unos 1.290 km desde Córdoba.',
+  },
+  {
     id: 'porto-alegre',
     nombre: 'Porto Alegre',
     provincia: 'Rio Grande do Sul',
@@ -113,10 +128,9 @@ export const PARADAS: Parada[] = [
     lat: -30.03,
     lon: -51.23,
     tipo: 'parada',
-    km: 630,
-    horas: 7,
-    dormir: true,
-    nota: 'Por BR-290. El tramo más largo del viaje, todo por Brasil.',
+    km: 320,
+    horas: 3.5,
+    nota: 'Se rodea por la BR-290 sin entrar a la ciudad, rumbo a Osório y la costa.',
   },
   {
     id: 'torres',
@@ -153,7 +167,7 @@ export const PARADAS: Parada[] = [
     km: 65,
     horas: 1,
     dormir: true,
-    nota: 'Llegada. Se sale de la BR-101 en Porto Belo y quedan 15 km de camino a la península.',
+    nota: 'Llegada el 17: el Airbnb recibe desde las 15:00. Se sale de la BR-101 en Porto Belo y quedan 15 km de camino a la península.',
   },
 ]
 
