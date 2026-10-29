@@ -1,17 +1,15 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 /**
- * La barra de abajo con una luz que marca la pestaña elegida.
+ * La barra de abajo, con menisco.
  *
- * La luz es siempre una de dos cosas: un anillo alrededor de una pestaña, o una
- * varilla recta estirada entre dos mientras viaja. Nunca una curva ni un
- * extremo suelto en el aire.
+ * La pestaña elegida sale de la barra en una burbuja que flota sobre el borde,
+ * y el borde se hunde debajo de ella como el agua alrededor de algo que flota.
+ * Toda la silueta es un solo camino: el hueco es un cuenco circular unido al
+ * borde por dos hombros redondeados, cada uno tangente al borde y al cuenco.
  *
- * Cada extremo tiene su propio resorte. El que va adelante es rígido y sale
- * rápido; el de atrás es blando y lo sigue. La distancia entre los dos es lo
- * que se ve como estiramiento. Mientras se estira la línea se afina, para que
- * el brillo total parezca el mismo. Se puede tocar una pestaña o arrastrar la
- * luz con el dedo a lo largo de la barra.
+ * Al moverse, la velocidad inclina la superficie: el hombro de atrás se estira
+ * y el de adelante se cierra. Se puede tocar una pestaña o arrastrar la burbuja.
  */
 
 export type Pestana<Id extends string> = { id: Id; nombre: string; icono: string }
@@ -22,69 +20,113 @@ type Props<Id extends string> = {
   alElegir: (id: Id) => void
 }
 
-type Caja = { centro: number; ancho: number; alto: number; arriba: number }
+/** Medidas de la silueta, en px. */
+const ALTO_BARRA = 66
+const ESQUINA = 24
+const RADIO_BURBUJA = 25
+/** Lo que el cuenco deja de aire alrededor de la burbuja. */
+const AIRE = 5
+const RADIO_CUENCO = RADIO_BURBUJA + AIRE
+const HOMBRO = 10
+/** Cuánto asoma la burbuja por encima del borde: el centro, un poco arriba. */
+const ALTURA_BURBUJA = 3
+/** Espacio libre arriba de la barra para la burbuja. */
+const TECHO = RADIO_BURBUJA + ALTURA_BURBUJA + 6
 
-/** Un resorte amortiguado: rigidez y amortiguación. */
-const RIGIDO = { k: 420, c: 30 }
-const BLANDO = { k: 140, c: 21 }
-/** Grosor de la línea quieta, y de la varilla. */
-const TRAZO = 2.6
-const ALTO_VARILLA = 6
+/** El resorte que lleva la burbuja de una pestaña a otra. */
+const RESORTE = { k: 300, c: 26 }
+
+const n = (v: number) => v.toFixed(2)
+
+/**
+ * El camino de la barra con el hueco centrado en `cx`. `sI` y `sD` son los
+ * radios de los hombros izquierdo y derecho, y `cy` la altura del cuenco.
+ */
+function silueta(ancho: number, cx: number, cy: number, sI: number, sD: number): string {
+  const T = TECHO
+  const B = TECHO + ALTO_BARRA
+  const r = RADIO_CUENCO
+  // Cada hombro es un círculo tangente al borde (centro a s por debajo) y
+  // tangente al cuenco (centros a s + r): de ahí sale a qué distancia está.
+  const alcance = (s: number) => Math.sqrt(Math.max(0, (s + r) ** 2 - (T + s - cy) ** 2))
+  const dI = alcance(sI)
+  const dD = alcance(sD)
+  // El hueco no puede meterse en las esquinas redondeadas.
+  const x = Math.min(Math.max(cx, ESQUINA + dI), ancho - ESQUINA - dD)
+
+  const tangente = (hx: number, s: number) => {
+    const k = s / (s + r)
+    return [hx + (x - hx) * k, T + s + (cy - T - s) * k] as const
+  }
+  const [p1x, p1y] = tangente(x - dI, sI)
+  const [p2x, p2y] = tangente(x + dD, sD)
+  const grande = p1y < cy ? 1 : 0
+
+  return [
+    `M ${ESQUINA} ${T}`,
+    `L ${n(x - dI)} ${T}`,
+    `A ${n(sI)} ${n(sI)} 0 0 1 ${n(p1x)} ${n(p1y)}`,
+    `A ${r} ${r} 0 ${grande} 0 ${n(p2x)} ${n(p2y)}`,
+    `A ${n(sD)} ${n(sD)} 0 0 1 ${n(x + dD)} ${T}`,
+    `L ${ancho - ESQUINA} ${T}`,
+    `A ${ESQUINA} ${ESQUINA} 0 0 1 ${ancho} ${T + ESQUINA}`,
+    `L ${ancho} ${B - ESQUINA}`,
+    `A ${ESQUINA} ${ESQUINA} 0 0 1 ${ancho - ESQUINA} ${B}`,
+    `L ${ESQUINA} ${B}`,
+    `A ${ESQUINA} ${ESQUINA} 0 0 1 0 ${B - ESQUINA}`,
+    `L 0 ${T + ESQUINA}`,
+    `A ${ESQUINA} ${ESQUINA} 0 0 1 ${ESQUINA} ${T}`,
+    'Z',
+  ].join(' ')
+}
 
 export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }: Props<Id>) {
-  const barra = useRef<HTMLDivElement>(null)
+  const caja = useRef<HTMLDivElement>(null)
+  const vidrio = useRef<HTMLDivElement>(null)
+  const canto = useRef<SVGPathElement>(null)
+  const sombra = useRef<SVGPathElement>(null)
+  const burbuja = useRef<HTMLDivElement>(null)
   const botones = useRef<(HTMLButtonElement | null)[]>([])
-  const luz = useRef<SVGRectElement>(null)
-  const halo = useRef<SVGRectElement>(null)
-  const reflejo = useRef<HTMLDivElement>(null)
-  const [cajas, setCajas] = useState<Caja[]>([])
+  const [centros, setCentros] = useState<number[]>([])
+  const [ancho, setAncho] = useState(0)
 
-  // Dónde está cada pestaña dentro de la barra. Se vuelve a medir si cambia el ancho.
   useLayoutEffect(() => {
     const medir = () => {
-      const base = barra.current?.getBoundingClientRect()
+      const base = caja.current?.getBoundingClientRect()
       if (!base) return
-      setCajas(
+      setAncho(base.width)
+      setCentros(
         botones.current.map((b) => {
           const r = b?.getBoundingClientRect()
-          return r
-            ? { centro: r.left - base.left + r.width / 2, ancho: r.width, alto: r.height, arriba: r.top - base.top }
-            : { centro: 0, ancho: 0, alto: 0, arriba: 0 }
+          return r ? r.left - base.left + r.width / 2 : 0
         }),
       )
     }
     medir()
     const observador = new ResizeObserver(medir)
-    if (barra.current) observador.observe(barra.current)
+    if (caja.current) observador.observe(caja.current)
     return () => observador.disconnect()
   }, [pestanas.length])
 
-  // El estado de la animación vive fuera de React: se mueve 60 veces por segundo
-  // y no hace falta redibujar la barra entera por eso.
-  const fisica = useRef({ a: 0, b: 0, va: 0, vb: 0, objA: 0, objB: 0, listo: false, visible: 0 })
+  // La posición de la burbuja vive fuera de React: se mueve en cada cuadro.
+  const fisica = useRef({ x: 0, v: 0, objetivo: 0, listo: false, visible: 0 })
   const arrastre = useRef<{ x0: number; activo: boolean } | null>(null)
   const ignorarClick = useRef(false)
 
   const indice = pestanas.findIndex((p) => p.id === actual)
-  const caja = indice >= 0 ? cajas[indice] : undefined
-
-  // El anillo es un poco más chico que el botón, para que respire adentro.
-  const anchoAnillo = (c: Caja) => c.ancho - 8
 
   useEffect(() => {
     const f = fisica.current
-    if (!caja) return
-    f.objA = caja.centro - anchoAnillo(caja) / 2
-    f.objB = caja.centro + anchoAnillo(caja) / 2
+    if (indice < 0 || centros[indice] === undefined) return
+    f.objetivo = centros[indice]
     if (!f.listo) {
-      // La primera vez aparece en su lugar, sin viajar desde la nada.
-      f.a = f.objA
-      f.b = f.objB
+      f.x = f.objetivo
       f.listo = true
     }
-  }, [caja])
+  }, [indice, centros])
 
   useEffect(() => {
+    if (!ancho) return
     const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches
     let cuadro = 0
     let antes = performance.now()
@@ -93,158 +135,157 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
       const f = fisica.current
       const dt = Math.min(0.032, (ahora - antes) / 1000)
       antes = ahora
-
       if (quieto) {
-        f.a = f.objA
-        f.b = f.objB
-        f.va = f.vb = 0
+        f.x = f.objetivo
+        f.v = 0
       } else {
-        // El extremo que va hacia adelante es el rígido; el que queda atrás, el blando.
-        const derecha = f.objB + f.objA > f.a + f.b
-        const resorteA = derecha ? BLANDO : RIGIDO
-        const resorteB = derecha ? RIGIDO : BLANDO
-        f.va += (-resorteA.k * (f.a - f.objA) - resorteA.c * f.va) * dt
-        f.vb += (-resorteB.k * (f.b - f.objB) - resorteB.c * f.vb) * dt
-        f.a += f.va * dt
-        f.b += f.vb * dt
+        f.v += (-RESORTE.k * (f.x - f.objetivo) - RESORTE.c * f.v) * dt
+        f.x += f.v * dt
       }
+      f.visible += ((indice >= 0 ? 1 : 0) - f.visible) * Math.min(1, dt * 12)
 
-      const objetivoVisible = actual !== null && indice >= 0 ? 1 : 0
-      f.visible += (objetivoVisible - f.visible) * Math.min(1, dt * 10)
+      // La velocidad inclina la superficie: q de -1 a 1 según para dónde va.
+      const q = Math.max(-1, Math.min(1, f.v / 1400))
+      const mag = Math.abs(q)
+      const sI = HOMBRO * (1 + 0.06 * mag + 0.4 * q)
+      const sD = HOMBRO * (1 + 0.06 * mag - 0.4 * q)
+      // Sin burbuja (en Ajustes), el cuenco sube hasta que el borde queda casi
+      // plano; con velocidad, la burbuja se levanta un poco.
+      const cy = TECHO - ALTURA_BURBUJA - (1 - f.visible) * (RADIO_CUENCO - ALTURA_BURBUJA - 1) - mag * 3
+      const camino = silueta(ancho, f.x, cy, sI, sD)
 
-      const c = cajas[Math.max(0, indice)] ?? cajas[0]
-      if (c && luz.current && halo.current) {
-        const izq = Math.min(f.a, f.b)
-        const ancho = Math.max(4, Math.abs(f.b - f.a))
-        // Cuánto se estiró respecto del anillo: 0 quieto, 1 o más viajando.
-        const estiramiento = Math.min(1, Math.max(0, ancho / anchoAnillo(c) - 1))
-        const altoAnillo = c.alto - 8
-        const alto = altoAnillo + (ALTO_VARILLA - altoAnillo) * estiramiento
-        const y = c.arriba + c.alto / 2 - alto / 2
-        const velocidad = Math.abs(f.va) + Math.abs(f.vb)
-        const trazo = Math.max(1.2, TRAZO - velocidad * 0.0012 - estiramiento * 0.8)
-
-        for (const r of [luz.current, halo.current]) {
-          r.setAttribute('x', `${izq}`)
-          r.setAttribute('y', `${y}`)
-          r.setAttribute('width', `${ancho}`)
-          r.setAttribute('height', `${alto}`)
-          r.setAttribute('rx', `${alto / 2}`)
-        }
-        luz.current.setAttribute('stroke-width', `${trazo}`)
-        halo.current.setAttribute('stroke-width', `${trazo * 3.5}`)
-        luz.current.parentElement?.setAttribute('opacity', `${f.visible}`)
-        if (reflejo.current) {
-          reflejo.current.style.transform = `translateX(${izq}px)`
-          reflejo.current.style.width = `${ancho}px`
-          reflejo.current.style.opacity = `${f.visible * (0.55 - estiramiento * 0.25)}`
-        }
-        barra.current?.style.setProperty('--luz-x', `${(f.a + f.b) / 2}px`)
+      if (vidrio.current) vidrio.current.style.clipPath = `path('${camino}')`
+      canto.current?.setAttribute('d', camino)
+      sombra.current?.setAttribute('d', camino)
+      if (burbuja.current) {
+        burbuja.current.style.transform = `translate(${f.x - RADIO_BURBUJA}px, ${cy - RADIO_BURBUJA}px) scale(${0.6 + 0.4 * f.visible})`
+        burbuja.current.style.opacity = `${f.visible}`
       }
       cuadro = requestAnimationFrame(paso)
     }
     cuadro = requestAnimationFrame(paso)
     return () => cancelAnimationFrame(cuadro)
-  }, [cajas, indice, actual])
+  }, [ancho, indice])
 
-  /** La pestaña más cercana a una posición horizontal de la barra. */
   function masCercana(x: number): number {
     let mejor = 0
-    cajas.forEach((c, i) => {
-      if (Math.abs(c.centro - x) < Math.abs(cajas[mejor].centro - x)) mejor = i
+    centros.forEach((c, i) => {
+      if (Math.abs(c - x) < Math.abs(centros[mejor] - x)) mejor = i
     })
     return mejor
   }
 
-  function xEnBarra(clientX: number): number {
-    return clientX - (barra.current?.getBoundingClientRect().left ?? 0)
-  }
+  const xEnBarra = (clientX: number) => clientX - (caja.current?.getBoundingClientRect().left ?? 0)
+  const iconoActivo = indice >= 0 ? pestanas[indice].icono : undefined
 
   return (
     <div
-      ref={barra}
-      className="barra-luz tarjeta relative mx-auto flex max-w-2xl gap-1 p-1.5"
-      style={{ touchAction: 'none' }}
+      ref={caja}
+      className="menisco relative mx-auto max-w-2xl"
+      style={{ height: TECHO + ALTO_BARRA, touchAction: 'none' }}
       onPointerDown={(e) => {
         arrastre.current = { x0: e.clientX, activo: false }
       }}
       onPointerMove={(e) => {
         const d = arrastre.current
-        if (!d || !cajas.length) return
+        if (!d) return
         if (!d.activo && Math.abs(e.clientX - d.x0) > 8) {
           d.activo = true
-          barra.current?.setPointerCapture(e.pointerId)
+          caja.current?.setPointerCapture(e.pointerId)
         }
-        if (d.activo) {
-          // Arrastrando, la luz sigue al dedo con el ancho de un anillo.
-          const x = xEnBarra(e.clientX)
-          const medio = anchoAnillo(cajas[0]) / 2
-          fisica.current.objA = x - medio
-          fisica.current.objB = x + medio
-        }
+        if (d.activo) fisica.current.objetivo = xEnBarra(e.clientX)
       }}
       onPointerUp={(e) => {
         const d = arrastre.current
         arrastre.current = null
         if (!d?.activo) return
-        // El click que sigue a soltar el dedo no cuenta; si el navegador no lo
-        // manda, el aviso se borra solo para no comerse el próximo toque.
+        // El click que sigue a soltar no cuenta; si no llega, el aviso se borra solo.
         ignorarClick.current = true
         setTimeout(() => {
           ignorarClick.current = false
         }, 0)
         const i = masCercana(xEnBarra(e.clientX))
-        const c = cajas[i]
-        fisica.current.objA = c.centro - anchoAnillo(c) / 2
-        fisica.current.objB = c.centro + anchoAnillo(c) / 2
+        fisica.current.objetivo = centros[i]
         alElegir(pestanas[i].id)
       }}
       onPointerCancel={() => {
         arrastre.current = null
-        if (caja) {
-          fisica.current.objA = caja.centro - anchoAnillo(caja) / 2
-          fisica.current.objB = caja.centro + anchoAnillo(caja) / 2
-        }
+        if (indice >= 0) fisica.current.objetivo = centros[indice]
       }}
     >
+      {/* Atrás, la sombra de la silueta; encima, el vidrio recortado con la misma forma. */}
       <svg className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden>
-        <g opacity="0">
-          {/* Abajo un trazo grueso y desenfocado que hace de resplandor; arriba la línea nítida. */}
-          <rect ref={halo} fill="none" stroke="var(--luz)" opacity="0.45" filter="url(#luz-desenfoque)" />
-          <rect ref={luz} fill="none" stroke="var(--luz-nucleo)" />
-        </g>
         <defs>
-          <filter id="luz-desenfoque" x="-50%" y="-200%" width="200%" height="500%">
-            <feGaussianBlur stdDeviation="3.5" />
+          <filter id="menisco-sombra" x="-10%" y="-30%" width="120%" height="180%">
+            <feGaussianBlur stdDeviation="9" />
           </filter>
         </defs>
+        <path ref={sombra} className="menisco-sombra" filter="url(#menisco-sombra)" transform="translate(0 8)" />
       </svg>
-      {/* El reflejo de la luz sobre lo que hay debajo de la barra. */}
-      <div ref={reflejo} className="barra-reflejo pointer-events-none absolute -bottom-2 left-0 h-3" aria-hidden />
+      <div ref={vidrio} className="menisco-vidrio absolute inset-0" aria-hidden />
+      <svg className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden>
+        <defs>
+          <linearGradient id="menisco-canto" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--vidrio-brillo)" />
+            <stop offset="100%" stopColor="var(--vidrio-borde)" stopOpacity="0.4" />
+          </linearGradient>
+        </defs>
+        <path ref={canto} fill="none" stroke="url(#menisco-canto)" strokeWidth="1.5" />
+      </svg>
 
-      {pestanas.map((p, i) => (
-        <button
-          key={p.id}
-          ref={(b) => {
-            botones.current[i] = b
-          }}
-          type="button"
-          onClick={() => {
-            if (ignorarClick.current) {
-              ignorarClick.current = false
-              return
-            }
-            alElegir(p.id)
-          }}
-          aria-current={actual === p.id ? 'page' : undefined}
-          className={`relative flex flex-1 flex-col items-center gap-0.5 rounded-full px-1 py-1.5 text-xs font-extrabold transition-transform active:scale-95 sm:text-sm ${
-            actual === p.id ? 'text-[var(--luz-texto)]' : 'opacity-80'
-          }`}
-        >
-          <img src={p.icono} alt="" width={34} height={34} className="size-[34px]" draggable={false} />
-          {p.nombre}
-        </button>
-      ))}
+      {/* La burbuja con el ícono de la pestaña elegida. */}
+      <div
+        ref={burbuja}
+        className="menisco-burbuja pointer-events-none absolute left-0 top-0 grid place-items-center rounded-full"
+        style={{ width: RADIO_BURBUJA * 2, height: RADIO_BURBUJA * 2, opacity: 0 }}
+        aria-hidden
+      >
+        {iconoActivo && <img src={iconoActivo} alt="" width={34} height={34} className="size-[34px]" draggable={false} />}
+      </div>
+
+      {/* Las pestañas. El margen a los costados deja lugar para que el hueco no
+          choque con las esquinas cuando la burbuja está en la primera o la última. */}
+      <div className="absolute inset-x-0 bottom-0 flex px-7" style={{ height: ALTO_BARRA }}>
+        {pestanas.map((p, i) => {
+          const elegida = actual === p.id
+          return (
+            <button
+              key={p.id}
+              ref={(b) => {
+                botones.current[i] = b
+              }}
+              type="button"
+              aria-label={p.nombre}
+              aria-current={elegida ? 'page' : undefined}
+              onClick={() => {
+                if (ignorarClick.current) {
+                  ignorarClick.current = false
+                  return
+                }
+                alElegir(p.id)
+              }}
+              className="relative flex flex-1 flex-col items-center justify-center rounded-full transition-transform active:scale-95"
+            >
+              {/* El ícono de la elegida se fue a la burbuja: acá queda su nombre. */}
+              <img
+                src={p.icono}
+                alt=""
+                width={32}
+                height={32}
+                draggable={false}
+                className={`size-8 transition-all duration-300 ${elegida ? 'scale-50 opacity-0' : 'opacity-90'}`}
+              />
+              <span
+                className={`menisco-etiqueta absolute bottom-2 text-xs font-black transition-all duration-300 ${
+                  elegida ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
+                }`}
+              >
+                {p.nombre}
+              </span>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

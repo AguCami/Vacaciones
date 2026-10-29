@@ -44,10 +44,9 @@
   --vidrio-borde: rgb(255 255 255 / 0.75);
   --vidrio-brillo: rgb(255 255 255 / 0.9);
   --vidrio-reflejo: rgb(255 255 255 / 0.45);
-  /* La luz de la barra de abajo: turquesa del mar, con el centro casi blanco. */
-  --luz: #12b9cc;
-  --luz-nucleo: #0aa3b6;
-  --luz-texto: #077a8a;
+  /* La burbuja de la barra de abajo y el nombre de la pestaña elegida. */
+  --acento: #ff6b5a;
+  --acento-texto: #d94436;
   --velo: linear-gradient(180deg, rgb(255 236 210 / 0.35) 0%, rgb(255 255 255 / 0.1) 40%, rgb(8 70 90 / 0.3) 100%);
   color-scheme: light;
 }
@@ -69,9 +68,8 @@
     --vidrio-borde: rgb(170 225 240 / 0.3);
     --vidrio-brillo: rgb(210 245 255 / 0.4);
     --vidrio-reflejo: rgb(210 245 255 / 0.12);
-  --luz: #5fe3f0;
-  --luz-nucleo: #d6fbff;
-  --luz-texto: #8ff0fa;
+  --acento: #ff7a6b;
+  --acento-texto: #ff9a8c;
   --velo: linear-gradient(180deg, rgb(6 18 36 / 0.62) 0%, rgb(6 28 44 / 0.55) 50%, rgb(4 22 34 / 0.75) 100%);
     color-scheme: dark;
   }
@@ -91,9 +89,8 @@
   --vidrio-borde: rgb(170 225 240 / 0.3);
   --vidrio-brillo: rgb(210 245 255 / 0.4);
   --vidrio-reflejo: rgb(210 245 255 / 0.12);
-  --luz: #5fe3f0;
-  --luz-nucleo: #d6fbff;
-  --luz-texto: #8ff0fa;
+  --acento: #ff7a6b;
+  --acento-texto: #ff9a8c;
   --velo: linear-gradient(180deg, rgb(6 18 36 / 0.62) 0%, rgb(6 28 44 / 0.55) 50%, rgb(4 22 34 / 0.75) 100%);
   color-scheme: dark;
 }
@@ -279,26 +276,30 @@ body {
   }
 }
 
+
 /*
- * La barra de abajo: el canto del vidrio se ilumina donde pasa la luz. Es un
- * degradado que sigue a --luz-x, recortado para que solo se vea en el borde.
+ * La barra con menisco. El vidrio es un div recortado con la silueta (así el
+ * desenfoque respeta el hueco); la sombra y el canto son la misma silueta en SVG.
  */
-.barra-luz::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: radial-gradient(90px 60px at var(--luz-x, 50%) 50%, var(--luz), transparent 70%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  pointer-events: none;
+.menisco-vidrio {
+  background: var(--vidrio);
+  backdrop-filter: blur(22px) saturate(180%);
 }
 
-/* El reflejo de la luz debajo de la barra, como sobre agua quieta. */
-.barra-reflejo {
-  background: radial-gradient(50% 50% at 50% 50%, var(--luz), transparent);
-  filter: blur(4px);
-  will-change: transform, width;
+.menisco-sombra {
+  fill: rgb(12 58 76 / 0.35);
+}
+
+/* La burbuja: un círculo claro con el aro y el resplandor del color de acento. */
+.menisco-burbuja {
+  background: radial-gradient(circle at 35% 30%, #fffdf8, #ffeedd);
+  box-shadow:
+    0 0 0 3px var(--acento),
+    0 0 18px 2px color-mix(in srgb, var(--acento) 55%, transparent),
+    0 8px 16px -6px rgb(12 58 76 / 0.45);
+  will-change: transform;
+}
+
+.menisco-etiqueta {
+  color: var(--acento-texto);
 }
