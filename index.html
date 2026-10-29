@@ -6,7 +6,13 @@
     <meta name="theme-color" content="#0ea5b7" />
     <link rel="icon" type="image/svg+xml" href="./icono.svg" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="./icono.svg" />
+    <!-- El iPhone no usa íconos SVG para la pantalla de inicio: va un PNG. -->
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <!-- Agregada a la pantalla de inicio del iPhone, se abre como app, a pantalla completa. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Vacaciones" />
     <meta name="description" content="El viaje de Córdoba a Bombas y Bombinhas: el mapa, las cuentas, las listas y una guía para los cuatro." />
     <title>Vacaciones</title>
   </head>

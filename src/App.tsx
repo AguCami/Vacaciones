@@ -62,7 +62,9 @@ export function App() {
   const paradaActualId = ajustes.paradaActualId ?? PARADAS[0].id
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 pb-32 pt-6">
+    // Los márgenes respetan la muesca y la barra del iPhone (y la cámara en horizontal):
+    // con la app agregada a la pantalla de inicio, el contenido llega hasta el borde.
+    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col pb-32 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1.5rem,env(safe-area-inset-top))]">
       {/* De fondo, un cuadro quieto del video de la intro: la playa detrás del vidrio. */}
       <div
         className="fondo"
@@ -145,7 +147,7 @@ export function App() {
       </main>
 
       {/* La barra va abajo y fija: en el auto se usa con una mano. */}
-      <nav className="fixed inset-x-0 bottom-0 z-10 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+      <nav className="fixed inset-x-0 bottom-0 z-10 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] pt-2">
         <BarraPestanas
           pestanas={PESTANIAS}
           actual={pestania === 'ajustes' ? null : pestania}

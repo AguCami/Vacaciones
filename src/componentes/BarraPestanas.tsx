@@ -347,8 +347,9 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
                   etiquetas.current[i] = span
                 }}
                 className="absolute bottom-[8px] text-sm font-black leading-none opacity-0"
-                // El color de la pestaña, mezclado con el del texto para que se lea en los dos temas.
-                style={{ color: `color-mix(in srgb, ${p.color} 65%, var(--texto))` }}
+                // El color de la pestaña, mezclado con el del texto para que se lea en los dos
+                // temas (de día, el amarillo de Gastos puro no se ve sobre el vidrio claro).
+                style={{ color: `color-mix(in srgb, ${p.color} 45%, var(--texto))` }}
               >
                 {p.nombre}
               </span>
