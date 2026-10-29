@@ -342,7 +342,7 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
                 ref={(span) => {
                   etiquetas.current[i] = span
                 }}
-                className="absolute bottom-[10px] text-xs font-black leading-none opacity-0"
+                className="absolute bottom-[8px] text-sm font-black leading-none opacity-0"
                 // El color de la pestaña, mezclado con el del texto para que se lea en los dos temas.
                 style={{ color: `color-mix(in srgb, ${p.color} 65%, var(--texto))` }}
               >
