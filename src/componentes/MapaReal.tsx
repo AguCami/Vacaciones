@@ -99,7 +99,7 @@ export default function MapaReal({ indiceActual, auto, seleccionada, alSeleccion
     // zoomSnap fino: así el recorrido llena el cuadro en vez de saltar al zoom entero de abajo.
     const m = L.map(contenedor.current, { zoomControl: false, attributionControl: true, zoomSnap: 0.25 })
     L.control.zoom({ position: 'bottomright' }).addTo(m)
-    // OpenStreetMap no tiene versión oscura: de noche se la oscurece con un filtro (ver estilos.css).
+    // El mapa va siempre claro, también con el celular en modo oscuro: así se leen las calles.
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',

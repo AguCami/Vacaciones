@@ -300,17 +300,6 @@ body {
   font-family: var(--font-sans);
 }
 
-/* De noche, los mapas de OpenStreetMap se oscurecen: se invierten y se vuelve
-   a girar el color, así el agua sigue siendo azul y el pasto verde. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-tema='claro']) .mapa-real .leaflet-tile-pane {
-    filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.8);
-  }
-}
-:root[data-tema='oscuro'] .mapa-real .leaflet-tile-pane {
-  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.8);
-}
-
 .mapa-real-chinche span {
   display: grid;
   place-items: center;
