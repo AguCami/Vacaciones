@@ -35,7 +35,7 @@ type Props<Id extends string> = {
 
 /** Medidas de la silueta, en px. */
 const ALTO_BARRA = 59
-const ESQUINA = 24
+const ESQUINA = 20
 const RADIO_BURBUJA = 25
 /** Lo que el cuenco deja de aire alrededor de la burbuja. */
 const AIRE = 5
@@ -55,7 +55,7 @@ const n = (v: number) => v.toFixed(2)
  * El camino de la barra con el hueco centrado en `cx`. `sI` y `sD` son los
  * radios de los hombros izquierdo y derecho, y `cy` la altura del cuenco.
  */
-function silueta(ancho: number, cx: number, cy: number, sI: number, sD: number): string {
+function silueta(ancho: number, cx: number, cy: number, sI: number, sD: number): { camino: string; x: number } {
   const T = TECHO
   const B = TECHO + ALTO_BARRA
   const r = RADIO_CUENCO
@@ -75,7 +75,7 @@ function silueta(ancho: number, cx: number, cy: number, sI: number, sD: number):
   const [p2x, p2y] = tangente(x + dD, sD)
   const grande = p1y < cy ? 1 : 0
 
-  return [
+  const camino = [
     `M ${ESQUINA} ${T}`,
     `L ${n(x - dI)} ${T}`,
     `A ${n(sI)} ${n(sI)} 0 0 1 ${n(p1x)} ${n(p1y)}`,
@@ -91,6 +91,7 @@ function silueta(ancho: number, cx: number, cy: number, sI: number, sD: number):
     `A ${ESQUINA} ${ESQUINA} 0 0 1 ${ESQUINA} ${T}`,
     'Z',
   ].join(' ')
+  return { camino, x }
 }
 
 export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }: Props<Id>) {
@@ -169,7 +170,9 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
       // Sin burbuja (en Ajustes), el cuenco sube hasta que el borde queda casi
       // plano; con velocidad, la burbuja se levanta un poco.
       const cy = TECHO - ALTURA_BURBUJA - (1 - f.visible) * (RADIO_CUENCO - ALTURA_BURBUJA - 1) - mag * 3
-      const camino = silueta(ancho, f.x, cy, sI, sD)
+      // Si el hueco no entra entero junto a una esquina, se corre hacia el centro;
+      // la burbuja va siempre donde quedó el hueco, así nunca quedan desfasados.
+      const { camino, x: xHueco } = silueta(ancho, f.x, cy, sI, sD)
 
       if (vidrio.current) vidrio.current.style.clipPath = `path('${camino}')`
       canto.current?.setAttribute('d', camino)
@@ -183,7 +186,7 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
       const cercana = t < 0.5 ? i0 : i0 + 1
 
       if (burbuja.current) {
-        burbuja.current.style.transform = `translate(${f.x - RADIO_BURBUJA}px, ${cy - RADIO_BURBUJA}px) scale(${0.6 + 0.4 * f.visible})`
+        burbuja.current.style.transform = `translate(${xHueco - RADIO_BURBUJA}px, ${cy - RADIO_BURBUJA}px) scale(${0.6 + 0.4 * f.visible})`
         burbuja.current.style.opacity = `${f.visible}`
         burbuja.current.style.backgroundColor = color
         burbuja.current.style.setProperty('--brillo', color)
@@ -303,9 +306,10 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
         )}
       </div>
 
-      {/* Las pestañas. El margen a los costados deja lugar para que el hueco no
-          choque con las esquinas cuando la burbuja está en la primera o la última. */}
-      <div className="absolute inset-x-0 bottom-0 flex px-7" style={{ height: ALTO_BARRA }}>
+      {/* Las pestañas. El margen a los costados deja lugar para que el hueco entre
+          entero, sin tocar las esquinas, cuando la burbuja está en la primera o la
+          última (probado a 360 px de ancho, el celular más angosto común). */}
+      <div className="absolute inset-x-0 bottom-0 flex px-10" style={{ height: ALTO_BARRA }}>
         {pestanas.map((p, i) => {
           const elegida = actual === p.id
           return (
