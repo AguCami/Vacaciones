@@ -5,7 +5,7 @@
  * si no hay red, sale de la copia guardada. Los archivos de assets/ llevan un
  * hash en el nombre y nunca cambian, así que esos van directo de la copia.
  */
-const CACHE = 'vacaciones-v2'
+const CACHE = 'vacaciones-v3'
 
 self.addEventListener('install', () => self.skipWaiting())
 

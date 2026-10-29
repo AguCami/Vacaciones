@@ -31,7 +31,11 @@ Los kilómetros y las horas son de ruta y aproximados, sin contar paradas ni la 
 **Todo el recorrido vive en un solo archivo: `src/datos/recorrido.ts`.** Cambiar una parada, agregar
 una o corregir un tramo se hace ahí y el mapa se redibuja solo. No hay que tocar nada más.
 
-El mapa está **dibujado a mano en SVG**, no es satelital. Pero cada parada se ubica con su latitud y
+Hay dos mapas, con un selector arriba. El **real** usa calles de OpenStreetMap con el estilo de CARTO
+(gratis, sin clave ni tarjeta) y el trazado por rutas de OSRM, que se pide una vez y queda guardado en
+el celular. Necesita señal. El botón **Google Maps** abre el recorrido en la app de Google para navegar.
+
+El otro mapa está **dibujado a mano en SVG**, no es satelital, y anda sin señal. Pero cada parada se ubica con su latitud y
 longitud de verdad, así que las proporciones y el orden son correctos. Es una ilustración fiel, no un
 plano de navegación: para manejar, el GPS.
 

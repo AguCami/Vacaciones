@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import {
   PARADAS,
   TOTAL_HORAS,
@@ -30,6 +30,36 @@ const ETIQUETAS: Record<string, { dx: number; dy: number; anclaje: 'start' | 'mi
   torres: { dx: 15, dy: 3, anclaje: 'start' },
   florianopolis: { dx: -14, dy: 20, anclaje: 'end' },
   bombinhas: { dx: -18, dy: -12, anclaje: 'end' },
+}
+
+// El mapa real (Leaflet) se baja recién cuando se muestra: pesa y no hace falta para abrir la app.
+const MapaReal = lazy(() => import('./MapaReal'))
+
+type Vista = 'real' | 'dibujo'
+const CLAVE_VISTA = 'vacaciones-vista-mapa'
+
+function vistaInicial(): Vista {
+  // Sin señal el mapa real no carga: se arranca con el dibujado.
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return 'dibujo'
+  try {
+    return localStorage.getItem(CLAVE_VISTA) === 'dibujo' ? 'dibujo' : 'real'
+  } catch {
+    return 'real'
+  }
+}
+
+/**
+ * El link para navegar con la app de Google Maps (gratis, sin clave): desde
+ * donde estén hasta Bombinhas, pasando por las paradas para dormir que falten.
+ */
+function enlaceGoogleMaps(indiceActual: number): string {
+  const destino = PARADAS[PARADAS.length - 1]
+  const escalas = PARADAS.filter((p, i) => i > indiceActual && p.dormir && p !== destino)
+    .map((p) => `${p.lat},${p.lon}`)
+    .join('|')
+  const parametros = new URLSearchParams({ api: '1', destination: `${destino.lat},${destino.lon}`, travelmode: 'driving' })
+  if (escalas) parametros.set('waypoints', escalas)
+  return `https://www.google.com/maps/dir/?${parametros}`
 }
 
 const COLOR_TIPO: Record<Parada['tipo'], string> = {
@@ -84,8 +114,66 @@ export function Mapa({ paradaActualId, alLlegar }: Props) {
     : puntos[indiceActual]
   const kmRestantes = Math.round(sobreLaRuta ? TOTAL_KM - sobreLaRuta.kmHechos : TOTAL_KM - acumulados[indiceActual])
 
+  const [vista, setVista] = useState<Vista>(vistaInicial)
+  const elegirVista = (v: Vista) => {
+    setVista(v)
+    try {
+      localStorage.setItem(CLAVE_VISTA, v)
+    } catch {
+      // Sin storage se vuelve al real al recargar, nada más.
+    }
+  }
+  const posAuto =
+    sobreLaRuta && ubicacion.posicion
+      ? { lat: ubicacion.posicion.lat, lon: ubicacion.posicion.lon }
+      : { lat: PARADAS[indiceActual].lat, lon: PARADAS[indiceActual].lon }
+
   return (
     <section className="flex flex-col gap-4">
+      <div className="flex items-center gap-2">
+        <div className="tarjeta flex !rounded-full p-1" role="tablist" aria-label="Tipo de mapa">
+          {(
+            [
+              ['real', 'Real'],
+              ['dibujo', 'Dibujado'],
+            ] as const
+          ).map(([v, nombre]) => (
+            <button
+              key={v}
+              type="button"
+              role="tab"
+              aria-selected={vista === v}
+              onClick={() => elegirVista(v)}
+              className={`rounded-full px-4 py-1.5 text-sm font-black transition-colors ${
+                vista === v ? 'bg-[var(--color-mar)] text-white' : 'opacity-75'
+              }`}
+            >
+              {nombre}
+            </button>
+          ))}
+        </div>
+        <a
+          href={enlaceGoogleMaps(indiceActual)}
+          target="_blank"
+          rel="noreferrer"
+          className="tarjeta ml-auto whitespace-nowrap !rounded-full px-4 py-2 text-sm font-black no-underline"
+        >
+          Google Maps ↗
+        </a>
+      </div>
+
+      {vista === 'real' ? (
+        <div className="tarjeta overflow-hidden p-2 sm:p-3">
+          <Suspense fallback={<div className="grid h-[18rem] place-items-center font-bold opacity-70">Cargando el mapa…</div>}>
+            <MapaReal
+              indiceActual={indiceActual}
+              auto={posAuto}
+              seleccionada={seleccionada}
+              alSeleccionar={setSeleccionada}
+            />
+          </Suspense>
+        </div>
+      ) : (
       <div className="tarjeta overflow-hidden p-2 sm:p-3">
         <svg
           viewBox={`0 0 ${LIENZO.ancho} ${LIENZO.alto}`}
@@ -315,6 +403,7 @@ export function Mapa({ paradaActualId, alLlegar }: Props) {
           </g>
         </svg>
       </div>
+      )}
 
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <Dato titulo="Distancia total" valor={`${TOTAL_KM.toLocaleString('es-AR')} km`} pie="ida, por Paso de los Libres" />

@@ -34,15 +34,15 @@ type Props<Id extends string> = {
 }
 
 /** Medidas de la silueta, en px. */
-const ALTO_BARRA = 58
+const ALTO_BARRA = 56
 const ESQUINA = 24
 const RADIO_BURBUJA = 25
 /** Lo que el cuenco deja de aire alrededor de la burbuja. */
 const AIRE = 5
 const RADIO_CUENCO = RADIO_BURBUJA + AIRE
 const HOMBRO = 10
-/** Cuánto asoma la burbuja por encima del borde: el centro, un poco arriba. */
-const ALTURA_BURBUJA = 3
+/** Dónde queda el centro de la burbuja respecto del borde: negativo, un poco hundida. */
+const ALTURA_BURBUJA = -1
 /** Espacio libre arriba de la barra para la burbuja. */
 const TECHO = RADIO_BURBUJA + ALTURA_BURBUJA + 6
 
@@ -342,7 +342,7 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
                 ref={(span) => {
                   etiquetas.current[i] = span
                 }}
-                className="absolute bottom-[7px] text-xs font-black leading-none opacity-0"
+                className="absolute bottom-[6px] text-xs font-black leading-none opacity-0"
                 // El color de la pestaña, mezclado con el del texto para que se lea en los dos temas.
                 style={{ color: `color-mix(in srgb, ${p.color} 65%, var(--texto))` }}
               >
