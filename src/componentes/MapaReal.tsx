@@ -2,6 +2,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useEffect, useRef } from 'react'
 import { PARADAS, type Parada } from '../datos/recorrido'
+import { AUTO_SVG_SUELTO } from './auto'
 
 /**
  * El mapa real: calles de OpenStreetMap con el estilo de CARTO, gratis y sin
@@ -73,7 +74,8 @@ function iconoParada(p: Parada, recorrida: boolean, elegida: boolean): L.DivIcon
   })
 }
 
-const iconoAuto = L.divIcon({ className: 'mapa-real-auto', iconSize: [34, 34], html: '<span>🚗</span>' })
+// El Onix parado justo arriba del punto, así no tapa la chinche de la parada.
+const iconoAuto = L.divIcon({ className: 'mapa-real-auto', iconSize: [58, 32], iconAnchor: [28, 40], html: AUTO_SVG_SUELTO })
 
 export default function MapaReal({ indiceActual, auto, seleccionada, alSeleccionar }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)

@@ -9,6 +9,7 @@ import {
   type Parada,
 } from '../datos/recorrido'
 import { useUbicacion } from '../ganchos/useUbicacion'
+import { AUTO_SVG } from './auto'
 import { caminoTierra, curvaSuave, LIENZO, proyectar } from './escena'
 
 /**
@@ -383,19 +384,20 @@ export function Mapa({ paradaActualId, alLlegar }: Props) {
             )
           })}
 
-          {/* El auto: con ubicación, encima del punto donde están; sin ella, al
-              costado de la última parada, para no tapar la chinche. */}
-          <g transform={sobreLaRuta ? `translate(${autoX} ${autoY - 16})` : `translate(${autoX - 30} ${autoY - 30})`}>
+          {/* El auto: con ubicación, apoyado en el punto donde están; sin ella,
+              parado justo arriba de la última parada, sin tapar la chinche. */}
+          <g
+            transform={
+              sobreLaRuta ? `translate(${autoX} ${autoY - 18}) scale(1.9)` : `translate(${autoX} ${autoY - 30}) scale(1.9)`
+            }
+          >
+            {/* El Onix blanco, con un saltito suave como si fuera andando. */}
             <g>
-              <ellipse cx="0" cy="15" rx="15" ry="4" fill="#0d2b3a" opacity="0.3" />
-              <rect x="-16" y="-2" width="32" height="14" rx="6" fill="#ff6b5a" />
-              <path d="M -10 -2 q 3 -10 10 -10 h 5 q 7 0 9 10 Z" fill="#8fe3e8" />
-              <circle cx="-8" cy="12" r="4.5" fill="#0d2b3a" />
-              <circle cx="8" cy="12" r="4.5" fill="#0d2b3a" />
+              <g dangerouslySetInnerHTML={{ __html: AUTO_SVG }} />
               <animateTransform
                 attributeName="transform"
                 type="translate"
-                values="0 0; 0 -4; 0 0"
+                values="0 0; 0 -2.5; 0 0"
                 dur="2.4s"
                 repeatCount="indefinite"
               />
