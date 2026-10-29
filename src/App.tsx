@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Ajustes } from './componentes/Ajustes'
 import { Balances } from './componentes/Balances'
+import { BarraPestanas, type Pestana } from './componentes/BarraPestanas'
 import { Cuentas } from './componentes/Cuentas'
 import { Guia } from './componentes/Guia'
 import { Intro } from './componentes/Intro'
@@ -15,13 +16,15 @@ type Pestania = 'mapa' | 'gastos' | 'cuentas' | 'listas' | 'guia' | 'ajustes'
 // Ajustes no está en la barra: se usa poco, y se entra desde el final de la Guía.
 // Cinco botones es lo que entra cómodo en un celular angosto.
 // Cada una con su ícono dibujado, en public/iconos/<id>.webp.
-const PESTANIAS: { id: Pestania; nombre: string }[] = [
-  { id: 'mapa', nombre: 'Mapa' },
-  { id: 'gastos', nombre: 'Gastos' },
-  { id: 'cuentas', nombre: 'Cuentas' },
-  { id: 'listas', nombre: 'Listas' },
-  { id: 'guia', nombre: 'Guía' },
-]
+const PESTANIAS: Pestana<Exclude<Pestania, 'ajustes'>>[] = (
+  [
+    ['mapa', 'Mapa'],
+    ['gastos', 'Gastos'],
+    ['cuentas', 'Cuentas'],
+    ['listas', 'Listas'],
+    ['guia', 'Guía'],
+  ] as const
+).map(([id, nombre]) => ({ id, nombre, icono: `${import.meta.env.BASE_URL}iconos/${id}.webp` }))
 
 export function App() {
   const viaje = useViaje()
@@ -142,28 +145,11 @@ export function App() {
 
       {/* La barra va abajo y fija: en el auto se usa con una mano. */}
       <nav className="fixed inset-x-0 bottom-0 z-10 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
-        <div className="tarjeta mx-auto flex max-w-2xl gap-1 p-1.5">
-          {PESTANIAS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => setPestania(p.id)}
-              aria-current={pestania === p.id ? 'page' : undefined}
-              className={`boton flex flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-xs sm:text-sm ${
-                pestania === p.id ? 'bg-[var(--color-mar)] text-white' : 'boton-plano bg-transparent'
-              }`}
-            >
-              <img
-                src={`${import.meta.env.BASE_URL}iconos/${p.id}.webp`}
-                alt=""
-                width={34}
-                height={34}
-                className="size-[34px]"
-              />
-              {p.nombre}
-            </button>
-          ))}
-        </div>
+        <BarraPestanas
+          pestanas={PESTANIAS}
+          actual={pestania === 'ajustes' ? null : pestania}
+          alElegir={setPestania}
+        />
       </nav>
     </div>
   )
