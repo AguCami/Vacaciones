@@ -9,10 +9,23 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
  * borde por dos hombros redondeados, cada uno tangente al borde y al cuenco.
  *
  * Al moverse, la velocidad inclina la superficie: el hombro de atrás se estira
- * y el de adelante se cierra. Se puede tocar una pestaña o arrastrar la burbuja.
+ * y el de adelante se cierra. La pestaña no se desliza: la barra se derrite.
+ * Al pasar sobre cada pestaña, la burbuja toma su ícono (que se apaga en la
+ * barra) y va cambiando de a poco al color de esa pestaña. Debajo de la barra
+ * queda un resplandor del mismo color. Se puede tocar o arrastrar la burbuja.
  */
 
-export type Pestana<Id extends string> = { id: Id; nombre: string; icono: string }
+export type Pestana<Id extends string> = { id: Id; nombre: string; icono: string; color: string }
+
+/** Un canal (0 rojo, 1 verde, 2 azul) de un color #rrggbb. */
+const canalDe = (h: string, i: number) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16)
+
+/** Mezcla dos colores #rrggbb: t = 0 es el primero, 1 el segundo. */
+function mezclar(a: string, b: string, t: number): string {
+  const c = canalDe
+  const canal = (i: number) => Math.round(c(a, i) + (c(b, i) - c(a, i)) * t)
+  return `rgb(${canal(0)} ${canal(1)} ${canal(2)})`
+}
 
 type Props<Id extends string> = {
   pestanas: Pestana<Id>[]
@@ -86,6 +99,10 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
   const canto = useRef<SVGPathElement>(null)
   const sombra = useRef<SVGPathElement>(null)
   const burbuja = useRef<HTMLDivElement>(null)
+  const iconoBurbuja = useRef<HTMLImageElement>(null)
+  const resplandor = useRef<HTMLDivElement>(null)
+  const iconos = useRef<(HTMLImageElement | null)[]>([])
+  const etiquetas = useRef<(HTMLSpanElement | null)[]>([])
   const botones = useRef<(HTMLButtonElement | null)[]>([])
   const [centros, setCentros] = useState<number[]>([])
   const [ancho, setAncho] = useState(0)
@@ -157,15 +174,50 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
       if (vidrio.current) vidrio.current.style.clipPath = `path('${camino}')`
       canto.current?.setAttribute('d', camino)
       sombra.current?.setAttribute('d', camino)
+      // Entre qué dos pestañas está la burbuja, y cuánto de cada una.
+      let i0 = 0
+      while (i0 < centros.length - 2 && f.x > centros[i0 + 1]) i0++
+      const tramo = centros[i0 + 1] - centros[i0] || 1
+      const t = Math.min(1, Math.max(0, (f.x - centros[i0]) / tramo))
+      const color = mezclar(pestanas[i0].color, pestanas[Math.min(i0 + 1, pestanas.length - 1)].color, t)
+      const cercana = t < 0.5 ? i0 : i0 + 1
+
       if (burbuja.current) {
         burbuja.current.style.transform = `translate(${f.x - RADIO_BURBUJA}px, ${cy - RADIO_BURBUJA}px) scale(${0.6 + 0.4 * f.visible})`
         burbuja.current.style.opacity = `${f.visible}`
+        burbuja.current.style.backgroundColor = color
+        burbuja.current.style.setProperty('--brillo', color)
+      }
+      // La burbuja muestra el ícono de la pestaña que tiene debajo.
+      const src = pestanas[cercana]?.icono
+      if (iconoBurbuja.current && src && iconoBurbuja.current.dataset.src !== src) {
+        iconoBurbuja.current.src = src
+        iconoBurbuja.current.dataset.src = src
+      }
+      // En la barra, el ícono se apaga a medida que la burbuja lo tapa.
+      iconos.current.forEach((img, i) => {
+        if (!img) return
+        const tapado = Math.min(1, Math.max(0, (Math.abs(f.x - centros[i]) - 8) / 40))
+        const apagado = 1 - f.visible * (1 - tapado)
+        img.style.opacity = `${0.9 * apagado}`
+        img.style.transform = `scale(${0.6 + 0.4 * apagado})`
+        // El nombre aparece donde el ícono se fue: así nunca se pisan.
+        const etiqueta = etiquetas.current[i]
+        if (etiqueta) {
+          etiqueta.style.opacity = `${1 - apagado}`
+          etiqueta.style.transform = `translateY(${4 * apagado}px)`
+        }
+      })
+      if (resplandor.current) {
+        resplandor.current.style.transform = `translateX(${f.x - 90}px)`
+        resplandor.current.style.opacity = `${f.visible * 0.6}`
+        resplandor.current.style.backgroundImage = `radial-gradient(closest-side, ${color}, transparent)`
       }
       cuadro = requestAnimationFrame(paso)
     }
     cuadro = requestAnimationFrame(paso)
     return () => cancelAnimationFrame(cuadro)
-  }, [ancho, indice])
+  }, [ancho, indice, centros, pestanas])
 
   function masCercana(x: number): number {
     let mejor = 0
@@ -213,6 +265,12 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
         if (indice >= 0) fisica.current.objetivo = centros[indice]
       }}
     >
+      {/* El resplandor del color de la burbuja, debajo de la barra. */}
+      <div
+        ref={resplandor}
+        className="pointer-events-none absolute left-0 top-full h-16 w-[180px] -translate-y-1/2 blur-xl"
+        aria-hidden
+      />
       {/* Atrás, la sombra de la silueta; encima, el vidrio recortado con la misma forma. */}
       <svg className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden>
         <defs>
@@ -240,7 +298,9 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
         style={{ width: RADIO_BURBUJA * 2, height: RADIO_BURBUJA * 2, opacity: 0 }}
         aria-hidden
       >
-        {iconoActivo && <img src={iconoActivo} alt="" width={34} height={34} className="size-[34px]" draggable={false} />}
+        {iconoActivo && (
+          <img ref={iconoBurbuja} src={iconoActivo} alt="" width={34} height={34} className="size-[34px]" draggable={false} />
+        )}
       </div>
 
       {/* Las pestañas. El margen a los costados deja lugar para que el hueco no
@@ -268,17 +328,23 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
             >
               {/* El ícono de la elegida se fue a la burbuja: acá queda su nombre. */}
               <img
+                ref={(img) => {
+                  iconos.current[i] = img
+                }}
                 src={p.icono}
                 alt=""
                 width={32}
                 height={32}
                 draggable={false}
-                className={`size-8 transition-all duration-300 ${elegida ? 'scale-50 opacity-0' : 'opacity-90'}`}
+                className="size-8"
               />
               <span
-                className={`menisco-etiqueta absolute bottom-2 text-xs font-black transition-all duration-300 ${
-                  elegida ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
-                }`}
+                ref={(span) => {
+                  etiquetas.current[i] = span
+                }}
+                className="absolute bottom-2 text-xs font-black opacity-0"
+                // El color de la pestaña, mezclado con el del texto para que se lea en los dos temas.
+                style={{ color: `color-mix(in srgb, ${p.color} 65%, var(--texto))` }}
               >
                 {p.nombre}
               </span>

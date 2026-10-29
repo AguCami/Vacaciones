@@ -18,13 +18,14 @@ type Pestania = 'mapa' | 'gastos' | 'cuentas' | 'listas' | 'guia' | 'ajustes'
 // Cada una con su ícono dibujado, en public/iconos/<id>.webp.
 const PESTANIAS: Pestana<Exclude<Pestania, 'ajustes'>>[] = (
   [
-    ['mapa', 'Mapa'],
-    ['gastos', 'Gastos'],
-    ['cuentas', 'Cuentas'],
-    ['listas', 'Listas'],
-    ['guia', 'Guía'],
+    // Cada pestaña con su color de playa: la burbuja de abajo lo va tomando.
+    ['mapa', 'Mapa', '#2ec4d6'],
+    ['gastos', 'Gastos', '#ffc23c'],
+    ['cuentas', 'Cuentas', '#ff6b5a'],
+    ['listas', 'Listas', '#6fd16a'],
+    ['guia', 'Guía', '#ff9a5c'],
   ] as const
-).map(([id, nombre]) => ({ id, nombre, icono: `${import.meta.env.BASE_URL}iconos/${id}.webp` }))
+).map(([id, nombre, color]) => ({ id, nombre, color, icono: `${import.meta.env.BASE_URL}iconos/${id}.webp` }))
 
 export function App() {
   const viaje = useViaje()
