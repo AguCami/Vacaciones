@@ -5,8 +5,9 @@ import { PARADAS, type Parada } from '../datos/recorrido'
 import { AUTO_IMAGEN, AUTO_PROPORCION } from './auto'
 
 /**
- * El mapa real: calles de OpenStreetMap con el estilo de CARTO, gratis y sin
- * clave. Encima, la ruta de verdad, las paradas, y el auto.
+ * El mapa real: calles de OpenStreetMap, gratis y sin clave. Encima, la ruta
+ * de verdad, las paradas, y el auto. (CARTO, que se usaba antes, empezó a
+ * pedir clave para sus mapas.)
  *
  * El trazado por rutas lo calcula OSRM (también libre) una sola vez y queda
  * guardado en el celular; mientras no lo tiene, o sin señal, une las paradas
@@ -95,15 +96,13 @@ export default function MapaReal({ indiceActual, auto, seleccionada, alSeleccion
   // El mapa se arma una sola vez.
   useEffect(() => {
     if (!contenedor.current || mapa.current) return
-    const oscuro = matchMedia('(prefers-color-scheme: dark)').matches
     // zoomSnap fino: así el recorrido llena el cuadro en vez de saltar al zoom entero de abajo.
     const m = L.map(contenedor.current, { zoomControl: false, attributionControl: true, zoomSnap: 0.25 })
     L.control.zoom({ position: 'bottomright' }).addTo(m)
-    L.tileLayer(`https://{s}.basemaps.cartocdn.com/rastertiles/${oscuro ? 'dark_all' : 'voyager'}/{z}/{x}/{y}{r}.png`, {
+    // OpenStreetMap no tiene versión oscura: de noche se la oscurece con un filtro (ver estilos.css).
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      subdomains: 'abcd',
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(m)
 
     const recta = PARADAS.map((p) => [p.lat, p.lon] as [number, number])
