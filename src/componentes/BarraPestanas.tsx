@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 /**
  * La barra de abajo, con menisco.
@@ -45,6 +45,12 @@ const HOMBRO = 8
 const ALTURA_BURBUJA = -1
 /** Espacio libre arriba de la barra para la burbuja. */
 const TECHO = RADIO_BURBUJA + ALTURA_BURBUJA + 6
+
+/**
+ * Lo más cerca de un costado que puede ir el centro de la burbuja con el hueco
+ * entero: la esquina, más lo que ocupa el hombro con el cuenco, más un respiro.
+ */
+const X_PUNTA = ESQUINA + Math.sqrt((HOMBRO + RADIO_CUENCO) ** 2 - (HOMBRO + ALTURA_BURBUJA) ** 2) + 2
 
 /** El resorte que lleva la burbuja de una pestaña a otra. */
 const RESORTE = { k: 300, c: 26 }
@@ -104,27 +110,24 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
   const resplandor = useRef<HTMLDivElement>(null)
   const iconos = useRef<(HTMLImageElement | null)[]>([])
   const etiquetas = useRef<(HTMLSpanElement | null)[]>([])
-  const botones = useRef<(HTMLButtonElement | null)[]>([])
-  const [centros, setCentros] = useState<number[]>([])
   const [ancho, setAncho] = useState(0)
 
   useLayoutEffect(() => {
-    const medir = () => {
-      const base = caja.current?.getBoundingClientRect()
-      if (!base) return
-      setAncho(base.width)
-      setCentros(
-        botones.current.map((b) => {
-          const r = b?.getBoundingClientRect()
-          return r ? r.left - base.left + r.width / 2 : 0
-        }),
-      )
-    }
+    const medir = () => setAncho(caja.current?.getBoundingClientRect().width ?? 0)
     medir()
     const observador = new ResizeObserver(medir)
     if (caja.current) observador.observe(caja.current)
     return () => observador.disconnect()
-  }, [pestanas.length])
+  }, [])
+
+  // Dónde va cada pestaña. Las de las puntas, justo donde el hueco entra entero
+  // junto a la esquina; las del medio, repartidas parejo entre ellas. Así hay el
+  // mayor espacio posible entre íconos y la burbuja nunca queda desfasada.
+  const centros = useMemo(() => {
+    if (!ancho || pestanas.length < 2) return []
+    const paso = (ancho - 2 * X_PUNTA) / (pestanas.length - 1)
+    return pestanas.map((_, i) => X_PUNTA + i * paso)
+  }, [ancho, pestanas])
 
   // La posición de la burbuja vive fuera de React: se mueve en cada cuadro.
   const fisica = useRef({ x: 0, v: 0, objetivo: 0, listo: false, visible: 0 })
@@ -230,6 +233,8 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
     return mejor
   }
 
+  // Cada botón ocupa el espacio entre sus vecinos, así toda la barra se puede tocar.
+  const anchoBoton = centros.length > 1 ? centros[1] - centros[0] : 0
   const xEnBarra = (clientX: number) => clientX - (caja.current?.getBoundingClientRect().left ?? 0)
   const iconoActivo = indice >= 0 ? pestanas[indice].icono : undefined
 
@@ -309,15 +314,12 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
       {/* Las pestañas. El margen a los costados deja lugar para que el hueco entre
           entero, sin tocar las esquinas, cuando la burbuja está en la primera o la
           última (probado a 360 px de ancho, el celular más angosto común). */}
-      <div className="absolute inset-x-0 bottom-0 flex px-6" style={{ height: ALTO_BARRA }}>
+      <div className="absolute inset-x-0 bottom-0" style={{ height: ALTO_BARRA }}>
         {pestanas.map((p, i) => {
           const elegida = actual === p.id
           return (
             <button
               key={p.id}
-              ref={(b) => {
-                botones.current[i] = b
-              }}
               type="button"
               aria-label={p.nombre}
               aria-current={elegida ? 'page' : undefined}
@@ -328,7 +330,12 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
                 }
                 alElegir(p.id)
               }}
-              className="relative flex flex-1 flex-col items-center justify-center rounded-full transition-transform active:scale-95"
+              className="absolute top-0 flex h-full flex-col items-center justify-center rounded-full transition-transform active:scale-95"
+              style={
+                centros.length
+                  ? { left: centros[i] - anchoBoton / 2, width: anchoBoton }
+                  : { left: `${(i * 100) / pestanas.length}%`, width: `${100 / pestanas.length}%` }
+              }
             >
               {/* El ícono de la elegida se fue a la burbuja: acá queda su nombre. */}
               <img
