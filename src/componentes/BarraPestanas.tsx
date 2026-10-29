@@ -35,12 +35,12 @@ type Props<Id extends string> = {
 
 /** Medidas de la silueta, en px. */
 const ALTO_BARRA = 59
-const ESQUINA = 20
-const RADIO_BURBUJA = 25
+const ESQUINA = 16
+const RADIO_BURBUJA = 23
 /** Lo que el cuenco deja de aire alrededor de la burbuja. */
-const AIRE = 5
+const AIRE = 4
 const RADIO_CUENCO = RADIO_BURBUJA + AIRE
-const HOMBRO = 10
+const HOMBRO = 8
 /** Dónde queda el centro de la burbuja respecto del borde: negativo, un poco hundida. */
 const ALTURA_BURBUJA = -1
 /** Espacio libre arriba de la barra para la burbuja. */
@@ -302,14 +302,14 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
         aria-hidden
       >
         {iconoActivo && (
-          <img ref={iconoBurbuja} src={iconoActivo} alt="" width={34} height={34} className="size-[34px]" draggable={false} />
+          <img ref={iconoBurbuja} src={iconoActivo} alt="" width={32} height={32} className="size-8" draggable={false} />
         )}
       </div>
 
       {/* Las pestañas. El margen a los costados deja lugar para que el hueco entre
           entero, sin tocar las esquinas, cuando la burbuja está en la primera o la
           última (probado a 360 px de ancho, el celular más angosto común). */}
-      <div className="absolute inset-x-0 bottom-0 flex px-10" style={{ height: ALTO_BARRA }}>
+      <div className="absolute inset-x-0 bottom-0 flex px-6" style={{ height: ALTO_BARRA }}>
         {pestanas.map((p, i) => {
           const elegida = actual === p.id
           return (
