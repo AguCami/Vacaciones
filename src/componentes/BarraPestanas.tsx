@@ -34,7 +34,7 @@ type Props<Id extends string> = {
 }
 
 /** Medidas de la silueta, en px. */
-const ALTO_BARRA = 66
+const ALTO_BARRA = 58
 const ESQUINA = 24
 const RADIO_BURBUJA = 25
 /** Lo que el cuenco deja de aire alrededor de la burbuja. */
@@ -342,7 +342,7 @@ export function BarraPestanas<Id extends string>({ pestanas, actual, alElegir }:
                 ref={(span) => {
                   etiquetas.current[i] = span
                 }}
-                className="absolute bottom-2 text-xs font-black opacity-0"
+                className="absolute bottom-[7px] text-xs font-black leading-none opacity-0"
                 // El color de la pestaña, mezclado con el del texto para que se lea en los dos temas.
                 style={{ color: `color-mix(in srgb, ${p.color} 65%, var(--texto))` }}
               >
