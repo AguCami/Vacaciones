@@ -326,8 +326,12 @@ body {
   opacity: 0.55;
 }
 
-.mapa-real-auto svg {
+.mapa-real-auto img {
   display: block;
+  /* Leaflet le pone width: auto a las imágenes de los marcadores: sin esto el
+     auto sale a su tamaño original, enorme. */
+  width: 100% !important;
+  height: 100% !important;
   filter: drop-shadow(0 2px 3px rgb(13 43 58 / 0.45));
 }
 

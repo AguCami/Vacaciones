@@ -9,7 +9,7 @@ import {
   type Parada,
 } from '../datos/recorrido'
 import { useUbicacion } from '../ganchos/useUbicacion'
-import { AUTO_SVG } from './auto'
+import { AUTO_IMAGEN, AUTO_PROPORCION } from './auto'
 import { caminoTierra, curvaSuave, LIENZO, proyectar } from './escena'
 
 /**
@@ -32,6 +32,9 @@ const ETIQUETAS: Record<string, { dx: number; dy: number; anclaje: 'start' | 'mi
   florianopolis: { dx: -14, dy: 20, anclaje: 'end' },
   bombinhas: { dx: -18, dy: -12, anclaje: 'end' },
 }
+
+/** Ancho del auto en el lienzo del mapa dibujado (que mide 1000 de ancho). */
+const ANCHO_AUTO = 88
 
 // El mapa real (Leaflet) se baja recién cuando se muestra: pesa y no hace falta para abrir la app.
 const MapaReal = lazy(() => import('./MapaReal'))
@@ -388,12 +391,21 @@ export function Mapa({ paradaActualId, alLlegar }: Props) {
               parado justo arriba de la última parada, sin tapar la chinche. */}
           <g
             transform={
-              sobreLaRuta ? `translate(${autoX} ${autoY - 18}) scale(1.9)` : `translate(${autoX} ${autoY - 30}) scale(1.9)`
+              // El origen es donde apoyan las ruedas: con ubicación, sobre el punto;
+              // sin ella, un poco arriba de la chinche para no taparla.
+              sobreLaRuta ? `translate(${autoX} ${autoY + 2})` : `translate(${autoX} ${autoY - 14})`
             }
           >
             {/* El Onix blanco, con un saltito suave como si fuera andando. */}
             <g>
-              <g dangerouslySetInnerHTML={{ __html: AUTO_SVG }} />
+              <ellipse cx="0" cy="-1" rx="40" ry="5" fill="#0d2b3a" opacity="0.28" />
+              <image
+                href={AUTO_IMAGEN}
+                x={-ANCHO_AUTO / 2}
+                y={-ANCHO_AUTO / AUTO_PROPORCION}
+                width={ANCHO_AUTO}
+                height={ANCHO_AUTO / AUTO_PROPORCION}
+              />
               <animateTransform
                 attributeName="transform"
                 type="translate"
